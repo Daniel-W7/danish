@@ -10,4 +10,4 @@ libtinyxml2.6.2
 对于Ubuntu/Linux 12.04/12.10 需要安装以下额外包:
 libtinyxml-dev
 libgtk-3-dev
-libvte-2.90-dev
+libvte-2.91-dev
