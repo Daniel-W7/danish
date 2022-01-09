@@ -16,10 +16,10 @@
 #include "config.h"
 #include "util.h"
 
-#include "debug.h"
 #include "page.h"
 #include "site.h"
-
+//#include "debug.h"
+int debug_create_show();
 GtkWidget *m_window;
 
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
