@@ -14,7 +14,7 @@
 #ifndef MAX
 #define MAX(a,b) ((a)>=(b)?(a):(b))
 #endif
-
+//获取res路径
 static inline char* get_res_path(const char *res)
 {
     char *path = (char*) malloc(256);
@@ -46,7 +46,7 @@ static inline GtkWidget *img_from_name(const char *res)
 
 static inline GtkWidget *img_from_stock(char *id, GtkIconSize size)
 {
-    return gtk_image_new_from_stock(id, size);
+    return gtk_image_new_from_icon_name(id, size);
 }
 
 

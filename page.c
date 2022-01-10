@@ -22,6 +22,8 @@
 #define SSH     "/usr/bin/ssh"
 #define SHELL   "/bin/bash"
 
+//添加gtk组件
+
 static GtkWidget *m_notebook;
 static GtkWidget *m_menu;
 static GtkWidget *m_menu_copy;
@@ -54,7 +56,7 @@ static void run_shell(pg_t *pg)
     }
     waitpid(pg->shell.child, NULL, 0);
 
-    vte_pty_close(pg->shell.pty);
+    //vte_pty_close(pg->shell.pty); //命令已过期，暂时禁用
 }
 
 static void run_ssh(pg_t *pg)
@@ -190,7 +192,7 @@ static void run_ssh(pg_t *pg)
         usleep(1000);
     }
 
-    vte_pty_close(pg->ssh.pty);
+    //vte_pty_close(pg->ssh.pty);//命令已过期，暂时禁用
 }
 
 static void *work(void *p)
@@ -209,10 +211,10 @@ static void *work(void *p)
         break;
     }
 
-    gdk_threads_enter();
+    //gdk_threads_enter(); 命令已过期，暂时禁用
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);
     gtk_notebook_remove_page(GTK_NOTEBOOK(m_notebook), num);
-    gdk_threads_leave();
+    //gdk_threads_leave();命令已过期，暂时禁用
 
     return NULL;
 }
@@ -247,7 +249,7 @@ static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
 static void on_btn_clicked(GtkToolButton *item, gpointer user_data)
 {
     GtkWidget *btn = (GtkWidget*) user_data;
-    gtk_menu_popup(GTK_MENU(btn), NULL, NULL, NULL, NULL, 0, 0);
+    gtk_menu_popup_at_pointer(GTK_MENU(btn),NULL);
 }
 
 static void on_menu_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
@@ -292,29 +294,32 @@ static void on_menu_copy_paste_clicked(GtkMenuItem *menuitem, gpointer user_data
 static void on_notebook_switch(GtkNotebook *notebook, GtkWidget *page,
                                guint page_num, gpointer user_data)
 {
-    // 修改标签颜色
+    /*
+    // 修改标签颜色(暂时先注释，暂时不用)
     //
     // 未被选中为黑色，被选中为红色
-    GdkColor color;
+    //GdkColor color;
+    //更新gdk_rgba_parse,暂时不设置标签颜色改变
+    const gchar *color;
 
     pg_t *pg = NULL;
-    gdk_color_parse("black", &color);
+    gdk_rgba_parse("NULL", color);
     int count = gtk_notebook_get_n_pages(GTK_NOTEBOOK(m_notebook));
     int i = 0;
     for (i = 1; i<count; i++) {
         GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
         pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
         if (pg->head.label) {
-            gtk_widget_modify_fg(pg->head.label, GTK_STATE_NORMAL, &color);     
+            gtk_widget_override_color(pg->head.label, GTK_STATE_NORMAL, &color);     
         }
     }
 
     pg = (pg_t*) g_object_get_data(G_OBJECT(page), "pg");
-    gdk_color_parse("red", &color);
+    gdk_rgba_parse("NULL", color);
     if (pg->head.label) {
-        gtk_widget_modify_fg(pg->head.label, GTK_STATE_NORMAL, &color);
+        gtk_widget_override_color(pg->head.label, GTK_STATE_NORMAL, &color);
     }
-
+    */
     // 移动焦点到vte上
     if (m_auto_focus) {
         gtk_widget_grab_focus(page);
@@ -354,7 +359,7 @@ static gboolean on_vte_button_press(GtkWidget *widget, GdkEvent *event, gpointer
         }
         
         // popup menu
-        gtk_menu_popup(GTK_MENU(m_menu), NULL, NULL, NULL, NULL, button->button, button->time);;
+        gtk_menu_popup_at_pointer(GTK_MENU(m_menu),button->time);;
     }
 
     return FALSE;
@@ -367,7 +372,7 @@ static int menu_create()
 
     m_menu = gtk_menu_new();
 
-    m_menu_copy  = gtk_image_menu_item_new_with_label("Copy");
+    m_menu_copy  = gtk_menu_item_new_with_label("Copy");
     gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(m_menu_copy),
                                   img_from_stock(GTK_STOCK_COPY, GTK_ICON_SIZE_MENU));
     gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(m_menu_copy), TRUE);
@@ -375,7 +380,7 @@ static int menu_create()
     gtk_menu_attach(GTK_MENU(m_menu), m_menu_copy, 0, 1, row, row+1);
     row++;
 
-    m_menu_paste  = gtk_image_menu_item_new_with_label("Paste");
+    m_menu_paste  = gtk_menu_item_new_with_label("Paste");
     gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(m_menu_paste),
                                   img_from_stock(GTK_STOCK_PASTE, GTK_ICON_SIZE_MENU));
     gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(m_menu_paste), TRUE);
@@ -393,7 +398,7 @@ static int menu_create()
     gtk_menu_attach(GTK_MENU(m_menu), mi, 0, 1, row, row+1);
     row++;
 
-    mi = gtk_image_menu_item_new_with_label("Close");
+    mi = gtk_menu_item_new_with_label("Close");
     gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(mi), img_from_stock(GTK_STOCK_CLOSE, GTK_ICON_SIZE_MENU));
     gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(mi), TRUE);
     g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(page_close_select), NULL);

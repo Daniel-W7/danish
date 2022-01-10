@@ -20,6 +20,8 @@
 #include "site.h"
 //#include "debug.h"
 int debug_create_show();
+
+//gtk初始化组件
 GtkWidget *m_window;
 
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
@@ -130,6 +132,7 @@ static int window_create_show()
             GtkWidget *vte = vte_terminal_new();
             gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
             vte_terminal_set_size((VteTerminal*)vte, 1, 1);
+
             VtePty *pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
             vte_terminal_set_pty_object((VteTerminal*)vte, pty);
             pthread_t tid;
@@ -155,7 +158,7 @@ int init()
     sprintf(PATH, "%s/%s", HOME, CONFIG_DIR);
 
     // mkdir PATH if it is not exits.
-    char cmd[256];
+    char cmd[512];
     memset(cmd, 0x00, sizeof(cmd));
     sprintf(cmd, "mkdir -p %s", PATH);
     system(cmd);
@@ -169,8 +172,8 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    g_thread_init(NULL);
-    gdk_threads_init();
+    //g_thread_init(NULL);
+   //gdk_threads_init();
 
     // 初始化
     gtk_init(&argc, &argv);

@@ -10,14 +10,14 @@
 
 #include "page.h"
 #include "site.h"
-
+//定义站点文件
 #define SITEFILE   "site.xml"
 
 extern GtkWidget *m_window;
 
 static char *m_sitefile = NULL;
 static TiXmlDocument *m_doc = NULL;
-
+//添加gtk组件
 static GtkWidget *m_object = NULL;
 static GtkWidget *m_vbox = NULL;
 static GtkWidget *m_toolbar = NULL;
@@ -53,7 +53,8 @@ void on_treeview_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTre
         }
     }
 }
-
+/*暂时关闭对item的定义
+//定义点击了quit的操作
 static void on_quit_clicked(GtkWidget *widget, gpointer user_data)
 {
     GtkWidget *dlg = gtk_message_dialog_new(GTK_WINDOW(m_window),
@@ -70,7 +71,7 @@ static void on_quit_clicked(GtkWidget *widget, gpointer user_data)
 
     gtk_widget_destroy(dlg);
 }
-
+//定义点击了closeall的操作
 static void on_closeall_clicked(GtkWidget *widget, gpointer user_data)
 {
     GtkWidget *dlg = gtk_message_dialog_new(GTK_WINDOW(m_window),
@@ -86,30 +87,32 @@ static void on_closeall_clicked(GtkWidget *widget, gpointer user_data)
 
     gtk_widget_destroy(dlg);
 }
-
+//定义点击了reload的操作
 static void on_reload_clicked(GtkWidget *widget, gpointer user_data)
 {
     site_load();
 }
-
+//定义点击了edit的操作
 static void on_edit_clicked(GtkWidget *widget, gpointer user_data)
 {
     char cmd[256] = {0x00};
     sprintf(cmd, "gvim %s", m_sitefile);
     system(cmd);
 }
-
+//定义点击了shell的操作
 static void on_shell_clicked(GtkWidget *widget, gpointer user_data)
 {
     page_shell_create();
 }
-
+*/
+//站点设置
 int site_init()
 {
+    //初始化站点文件位置
     m_sitefile = get_res_path(SITEFILE);
     m_doc = new TiXmlDocument();
 
-    // main container
+    // main container，主界面
     m_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     m_object = m_vbox;
 
@@ -117,15 +120,16 @@ int site_init()
     m_toolbar = gtk_toolbar_new();
     gtk_toolbar_set_style(GTK_TOOLBAR(m_toolbar), GTK_TOOLBAR_BOTH);
     gtk_box_pack_start(GTK_BOX(m_vbox), m_toolbar, FALSE, FALSE, 0);
+        /*item定义出错，暂时关闭
         GtkToolItem *item;
 
         // close all
-        item = gtk_tool_button_new_from_stock(GTK_STOCK_QUIT);
+        item = gtk_tool_button_new(GTK_STOCK_QUIT);
         gtk_toolbar_insert(GTK_TOOLBAR(m_toolbar), item, -1);
         g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_quit_clicked), NULL);
 
         // close all
-        item = gtk_tool_button_new_from_stock(GTK_STOCK_CLOSE);
+        item = gtk_tool_button_new(GTK_STOCK_CLOSE);
         gtk_tool_button_set_label(GTK_TOOL_BUTTON(item), "Close All");
         gtk_toolbar_insert(GTK_TOOLBAR(m_toolbar), item, -1);
         g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_closeall_clicked), NULL);
@@ -135,12 +139,12 @@ int site_init()
         gtk_toolbar_insert(GTK_TOOLBAR(m_toolbar), item, -1);
 
         // reload
-        item = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
+        item = gtk_tool_button_new(GTK_STOCK_REFRESH);
         gtk_toolbar_insert(GTK_TOOLBAR(m_toolbar), item, -1);
         g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_reload_clicked), NULL);
 
         // edit
-        item = gtk_tool_button_new_from_stock(GTK_STOCK_EDIT);
+        item = gtk_tool_button_new(GTK_STOCK_EDIT);
         gtk_toolbar_insert(GTK_TOOLBAR(m_toolbar), item, -1);
         g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_edit_clicked), NULL);
 
@@ -152,6 +156,7 @@ int site_init()
         item = gtk_tool_button_new(img_from_name(ICON_SHELL), "Shell");
         gtk_toolbar_insert(GTK_TOOLBAR(m_toolbar), item, -1);
         g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_shell_clicked), NULL);
+        */
 
     // tree_store
     m_treestore = gtk_tree_store_new(NUM_COLS, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_POINTER);
@@ -213,7 +218,7 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
     }
     else if (strcmp(ele->Value(), "dir") == 0) {
         gtk_tree_store_append(m_treestore, &t, iter);
-
+        //获取图标所在路径
         char *tmp = get_res_path(ICON_DIR);
         GdkPixbuf* icon = gdk_pixbuf_new_from_file(tmp, NULL);
         free(tmp);
