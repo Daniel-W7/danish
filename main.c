@@ -23,7 +23,7 @@ int debug_create_show();
 
 //gtk初始化组件
 GtkWidget *m_window;
-
+//定义窗口打开关闭移动的操作
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
     GdkEventKey *key = (GdkEventKey*) event;
@@ -71,7 +71,8 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
 
     return FALSE;
 }
-
+/*
+//定义pty的模式,暂时无法使用，先注释掉
 static void *proc_allvte(void *p)
 {
     int master = vte_pty_get_fd((VtePty*)p);
@@ -103,8 +104,9 @@ static void *proc_allvte(void *p)
 
     return NULL;
 }
+*/
 
-
+//创建窗口
 static int window_create_show()
 {
     char *tmp;
@@ -133,10 +135,11 @@ static int window_create_show()
             gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
             vte_terminal_set_size((VteTerminal*)vte, 1, 1);
 
-            VtePty *pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
-            vte_terminal_set_pty_object((VteTerminal*)vte, pty);
-            pthread_t tid;
-            pthread_create(&tid, NULL, proc_allvte, pty);
+            //VtePty *pty = pty_new_sync(VTE_PTY_DEFAULT,NULL); //implicit declaration of function
+            //vte_terminal_set_pty_object((VteTerminal*)vte, pty);
+            //vte_terminal_set_pty((VteTerminal*)vte, pty);
+            //pthread_t tid;
+            //pthread_create(&tid, NULL, proc_allvte, pty);
 
     gtk_widget_show_all(m_window);
 
@@ -145,6 +148,7 @@ static int window_create_show()
 
 const char *HOME = NULL;
 char PATH[256] = {0x00};
+//初始化，找到家目录，并创建对应目录
 int init()
 {
     // home
@@ -165,15 +169,15 @@ int init()
 
     return 0;
 }
-
+//主程序
 int main(int argc, char **argv)
 {
     if (init() != 0) {
         return -1;
     }
 
-    //g_thread_init(NULL);
-   //gdk_threads_init();
+    //g_thread_init(NULL);线程配置，已过期，暂时关闭
+   //gdk_threads_init();线程配置，已过期，暂时关闭
 
     // 初始化
     gtk_init(&argc, &argv);
@@ -192,7 +196,7 @@ int main(int argc, char **argv)
     // 创建主窗口
     window_create_show();
 
-    // 创建DEBUG_WINDOW
+    // 创建DEBUG_WINDOW，暂时关闭
     //debug_create_show(m_window);
 
     gtk_main();

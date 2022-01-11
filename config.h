@@ -5,7 +5,7 @@
 #define VERSION     "1.0"
 #define AUTHOR      "Niu Chenguang"
 #define EMAIL       "chrisniu1984@gmail.com"
-#define COPYRIGHT   "Copyright (c) 2011-2012 "AUTHOR" <"EMAIL">"
+#define COPYRIGHT   " Copyright (c) 2011-2012 " AUTHOR " <" EMAIL "> "
 
 #define CONFIG_DIR    ".jnXssh"
 

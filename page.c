@@ -126,7 +126,7 @@ static void run_ssh(pg_t *pg)
         printf("Connecting ... %s:%s\n", pg->ssh.cfg.host, pg->ssh.cfg.port);
         printf("\n");
 
-        char host[256];
+        char host[512];
         memset(host, 0x00, sizeof(host));
         sprintf(host, "%s@%s", pg->ssh.cfg.user, pg->ssh.cfg.host);
         execlp(SSH, SSH, host, "-p", pg->ssh.cfg.port, NULL);
@@ -218,13 +218,13 @@ static void *work(void *p)
 
     return NULL;
 }
-
+/*暂时禁用
 static void on_menu_copy_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
     pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
-
+    //变量无用，暂时关闭
     VteTerminal *vte = (VteTerminal*) NULL;
     if (pg->type == PG_TYPE_SHELL) {
         vte = (VteTerminal*) pg->shell.vte;
@@ -233,10 +233,10 @@ static void on_menu_copy_clicked(GtkMenuItem *menuitem, gpointer user_data)
         vte = (VteTerminal*) pg->ssh.vte;
     }
 
-    vte_terminal_copy_clipboard(vte);
-    vte_terminal_select_none(vte);
+    //vte_terminal_copy_clipboard(vte);命令已过期，暂时禁用
+    //vte_terminal_select_none(vte);命令已过期，暂时禁用
 }
-
+*/
 static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
@@ -251,24 +251,7 @@ static void on_btn_clicked(GtkToolButton *item, gpointer user_data)
     GtkWidget *btn = (GtkWidget*) user_data;
     gtk_menu_popup_at_pointer(GTK_MENU(btn),NULL);
 }
-
-static void on_menu_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
-{
-    int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
-    GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
-    pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
-
-    VteTerminal *vte = (VteTerminal*) NULL;
-    if (pg->type == PG_TYPE_SHELL) {
-        vte = (VteTerminal*) pg->shell.vte;
-    }
-    else if (pg->type == PG_TYPE_SSH) {
-        vte = (VteTerminal*) pg->ssh.vte;
-    }
-
-    vte_terminal_paste_clipboard(vte);
-}
-
+/*
 static void on_menu_copy_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
@@ -283,10 +266,11 @@ static void on_menu_copy_paste_clicked(GtkMenuItem *menuitem, gpointer user_data
         vte = (VteTerminal*) pg->ssh.vte;
     }
 
-    vte_terminal_copy_clipboard(vte);
-    vte_terminal_select_none(vte);
+    //vte_terminal_copy_clipboard(vte);命令已过期，暂时禁用
+    //vte_terminal_select_none(vte);命令已过期，暂时禁用
     vte_terminal_paste_clipboard(vte);
 }
+*/
 
 // 标签选中改变时
 // 1、修改标签颜色
@@ -359,12 +343,13 @@ static gboolean on_vte_button_press(GtkWidget *widget, GdkEvent *event, gpointer
         }
         
         // popup menu
-        gtk_menu_popup_at_pointer(GTK_MENU(m_menu),button->time);;
+        //gtk_menu_popup_at_pointer(GTK_MENU(m_menu),button->time);;
+        gtk_menu_popup_at_pointer(GTK_MENU(m_menu),NULL);;
     }
 
     return FALSE;
 }
-
+/*过时语句太多，暂时关闭
 static int menu_create()
 {
     int row = 0;
@@ -409,11 +394,12 @@ static int menu_create()
 
     return 0;
 }
+*/
 
 int page_init(GtkWidget *hub_page) 
 {
     // popup menu
-    menu_create();
+    //menu_create();//implicit declaration of function ‘menu_create’
 
     // notebook
     m_notebook = gtk_notebook_new();
@@ -425,7 +411,7 @@ int page_init(GtkWidget *hub_page)
     bzero(pg, sizeof(pg_t));
     pg->type = PG_TYPE_HUB;
     pg->head.box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    pg->head.image = img_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
+    //pg->head.image = img_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);//warning: ‘GtkStock’ is deprecated 
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
     gtk_widget_show_all(pg->head.box);
 
@@ -477,10 +463,10 @@ gint page_shell_create()
     pg->body = vte_terminal_new();
     pg->shell.vte = pg->body;
 
-    pg->shell.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
-    vte_terminal_set_pty_object((VteTerminal*)pg->shell.vte, pg->ssh.pty);
+    //pg->shell.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 未定义，暂时禁用
+    //vte_terminal_set_pty_object((VteTerminal*)pg->shell.vte, pg->ssh.pty);//warning: implicit declaration of function ‘vte_terminal_set_pty_object’
 
-    vte_terminal_set_font_from_string((VteTerminal*)pg->shell.vte, "WenQuanYi Micro Hei Mono 11");
+    //vte_terminal_set_font_from_string((VteTerminal*)pg->shell.vte, "WenQuanYi Micro Hei Mono 11");//warning: implicit declaration of function ‘vte_terminal_set_font_from_string’
     vte_terminal_set_scrollback_lines((VteTerminal*)pg->shell.vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->shell.vte, 1);
     g_object_set_data(G_OBJECT(pg->shell.vte), "pg", pg);
@@ -574,11 +560,11 @@ gint page_ssh_create(cfg_t *cfg)
     // pty + vte
     GtkWidget *vte = vte_terminal_new();
     pg->ssh.vte = vte;
-    vte_terminal_set_emulation((VteTerminal*) vte, "xterm");
+    //vte_terminal_set_emulation((VteTerminal*) vte, "xterm");//warning: implicit declaration of function ‘vte_terminal_set_emulation’
     gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
-    pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
-    vte_terminal_set_pty_object((VteTerminal*)vte, pg->ssh.pty);
-    vte_terminal_set_font_from_string((VteTerminal*)vte, "WenQuanYi Micro Hei Mono 11");
+    //pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 未定义，暂时禁用
+    vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
+    vte_terminal_set_font_scale((VteTerminal*)vte, 0);
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
     g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
