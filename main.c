@@ -18,8 +18,6 @@
 
 #include "page.h"
 #include "site.h"
-//#include "debug.h"
-int debug_create_show();
 
 //gtk初始化组件
 GtkWidget *m_window;

@@ -31,7 +31,7 @@ enum {
     NUM_COLS,
 };
 
-// 激活tree节点。
+// 激活tree节点,用于tree显示
 void on_treeview_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data) 
 {
     GValue value = {0,};
@@ -202,7 +202,7 @@ void site_term()
 
     free(m_sitefile);
 }
-
+//获取配置文件和图标文件
 static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
 {
     GtkTreeIter t;
@@ -262,7 +262,7 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
             strcpy(cfg->pass, ele->Attribute("pass"));
         }
 
-        // cmd
+        // cmd,进行程序执行
         TiXmlElement *btn;
         int i;
         int j;
@@ -301,7 +301,7 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
         p = &t;
     }
 }
-
+//进行站点加载
 int site_load()
 {
     if (access(m_sitefile, R_OK|W_OK) == 0) {

@@ -1,5 +1,5 @@
 TARGET = jnXssh
-OBJS = main.o page.o site.opp debug.o
+OBJS = main.o page.o site.opp
 
 HEADER = config.h
 CFLAGS = -g -Wall -pipe $(shell pkg-config --cflags gtk+-3.0 vte-2.91 gthread-2.0 tinyxml)
@@ -21,7 +21,8 @@ install: ${TARGET}
 	mkdir -p ${HOME}/.jnXssh/
 	cp -r res ${HOME}/.jnXssh/
 	if [ ! -f ${HOME}/.jnXssh/site.xml ]; then cp site.xml.tmpl ${HOME}/.jnXssh/site.xml; fi
-
+	rm -rf $(TARGET) $(OBJS)
+	rm -rf cscope*
 clean:
 	rm -rf $(TARGET) $(OBJS)
 	rm -rf cscope*
