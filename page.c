@@ -1,6 +1,6 @@
 #define _XOPEN_SOURCE
 #define _GNU_SOURCE
-
+/*定义页面显示内容，以及ssh连接，tty，pty配置内容*/
 #include <fcntl.h>
 #include <pthread.h>
 
@@ -9,7 +9,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <sys/types.h>//里面包含pid_t等函数
 #include <sys/select.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
@@ -31,10 +31,12 @@ static GtkWidget *m_menu_paste;
 static GtkWidget *m_menu_copy_paste;
 
 static int m_auto_focus = 1;
-
+//定义pg->type == PG_TYPE_SSH的情况
 static void *wait_ssh_child(void *p)
 {
+    //pg_t为page.h中定义的结构体
     pg_t *pg = (pg_t*) p;
+    //type为pt_g内部定义的枚举变量，包含PG_TYPE_HUB,PG_TYPE_SSH,PG_TYPE_SHELL
     if (pg->type == PG_TYPE_SSH) {
         waitpid(pg->ssh.child, NULL, 0);
         pg->ssh.need_stop = 1;
@@ -42,30 +44,33 @@ static void *wait_ssh_child(void *p)
 
     return NULL;
 }
-
+//打开shell
 static void run_shell(pg_t *pg)
 {
+    //如果pg为空或者type不等于PG_TYPE_SHELL，返回空
     if (NULL == pg || pg->type != PG_TYPE_SHELL) {
         return;
     }
 
-    pg->shell.child = fork();
+    pg->shell.child = fork();//定义了一个shell的子进程，如果fork返回0，说明在shell子进程中
     if (pg->shell.child == 0) {
         vte_pty_child_setup(pg->shell.pty);
-        execlp(SHELL, SHELL, NULL);
+        execlp(SHELL, SHELL, NULL);//excute shell
     }
-    waitpid(pg->shell.child, NULL, 0);
+    waitpid(pg->shell.child, NULL, 0);//等待子进程消失
 
-    //vte_pty_close(pg->shell.pty); //命令已过期，暂时禁用
+    //vte_pty_close(pg->shell.pty); //关闭vtepty终端
 }
 
 static void run_ssh(pg_t *pg)
 {
+    //如果pg为空或者type不等于PG_TYPE_SSH，返回空
     if (NULL == pg || pg->type != PG_TYPE_SSH) {
         return;
     }
 
     /* 
+     *输出输入流程
      * [output flow-chart]
      * vte << vte_master_fd << vte_slave_fd << this_app << mine_master_fd << mine_slave_fd << ssh
      * 
@@ -76,10 +81,10 @@ static void run_ssh(pg_t *pg)
     int vte_slave_fd = open(ptsname(vte_master_fd), O_RDWR);
 
     // raw 模式
-    struct termios tio;
-    tcgetattr(vte_slave_fd, &tio);
-    cfmakeraw(&tio);
-    tcsetattr(vte_slave_fd, TCSADRAIN, &tio);
+    struct termios tio;//termios tty调用接口
+    tcgetattr(vte_slave_fd, &tio);//tcgetattr函数用于获取与终端相关的参数。参数fd为终端的文件描述符，返回的结果保存在termios结构体中
+    cfmakeraw(&tio);//初始化 termios结构体,将他的一些成员初始化为默认的设置
+    tcsetattr(vte_slave_fd, TCSADRAIN, &tio);//tcsetattr函数用于设置终端的相关参数。参数fd为打开的终端文件描述符，参数optional_actions用于控制修改起作用的时间，而结构体termios_p中保存了要修改的参数。
 
     // open mine_master_fd
     int mine_master_fd = getpt();
@@ -237,6 +242,7 @@ static void on_menu_copy_clicked(GtkMenuItem *menuitem, gpointer user_data)
     //vte_terminal_select_none(vte);命令已过期，暂时禁用
 }
 */
+//定义命令输入的执行过程
 static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));

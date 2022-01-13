@@ -18,7 +18,6 @@
 
 #include "page.h"
 #include "site.h"
-
 //gtk初始化组件
 GtkWidget *m_window;
 //定义窗口打开关闭移动的操作
@@ -186,7 +185,7 @@ int main(int argc, char **argv)
     // 装载site配置
     site_load();
 
-    // 创建tab容（使用site页作为hub_page)
+    // 创建tab容器（使用site页作为hub_page)
     GtkWidget *hub = site_get_object();
     page_init(hub);
     gtk_widget_grab_focus(hub);

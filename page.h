@@ -33,6 +33,7 @@ typedef struct {
 } cfg_t;
 
 typedef struct {
+    //定义枚举type
     enum {
         PG_TYPE_HUB,
         PG_TYPE_SSH,
