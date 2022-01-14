@@ -68,40 +68,6 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
 
     return FALSE;
 }
-/*
-//定义pty的模式,暂时无法使用，先注释掉
-static void *proc_allvte(void *p)
-{
-    int master = vte_pty_get_fd((VtePty*)p);
-    int slave = open(ptsname(master), O_RDWR);
-
-    // raw 模式
-    struct termios tio;
-    tcgetattr(slave, &tio);
-    cfmakeraw(&tio);
-    tcsetattr(slave, TCSADRAIN, &tio);
-
-    fd_set set;
-    while (1) {
-        FD_ZERO(&set);
-        FD_SET(slave, &set);
-        struct timeval tv = {0, 100};
-
-        if (select(slave+1, &set, NULL, NULL, &tv) > 0) {
-            char buf[256];
-            int len = read(slave, buf, sizeof(buf));
-            if (len > 0) {
-                buf[len] = '\0';
-                page_foreach_send_string(buf);
-            }
-        }
-
-        usleep(1000);
-    }
-
-    return NULL;
-}
-*/
 
 //创建窗口
 static int window_create_show()
@@ -131,12 +97,6 @@ static int window_create_show()
             GtkWidget *vte = vte_terminal_new();
             gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
             vte_terminal_set_size((VteTerminal*)vte, 1, 1);
-
-            //VtePty *pty = pty_new_sync(VTE_PTY_DEFAULT,NULL); //implicit declaration of function
-            //vte_terminal_set_pty_object((VteTerminal*)vte, pty);
-            //vte_terminal_set_pty((VteTerminal*)vte, pty);
-            //pthread_t tid;
-            //pthread_create(&tid, NULL, proc_allvte, pty);
 
     gtk_widget_show_all(m_window);
 
@@ -172,9 +132,6 @@ int main(int argc, char **argv)
     if (init() != 0) {
         return -1;
     }
-
-    //g_thread_init(NULL);线程配置，已过期，暂时关闭
-   //gdk_threads_init();线程配置，已过期，暂时关闭
 
     // 初始化
     gtk_init(&argc, &argv);

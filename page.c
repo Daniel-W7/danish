@@ -61,7 +61,7 @@ static void run_shell(pg_t *pg)
 
     //vte_pty_close(pg->shell.pty); //关闭vtepty终端
 }
-
+//打开并建立ssh连接
 static void run_ssh(pg_t *pg)
 {
     //如果pg为空或者type不等于PG_TYPE_SSH，返回空
@@ -91,36 +91,35 @@ static void run_ssh(pg_t *pg)
     if (mine_master_fd < 0) {
         return;
     }
-    int flags = fcntl(mine_master_fd, F_GETFL, 0);
+    int flags = fcntl(mine_master_fd, F_GETFL, 0);//F_GETFL 取得文件描述词状态旗标, 此旗标为open()的参数flags.，返回值：成功则返回0, 若有错误则返回-1, 错误原因存于errno.
     if (flags < 0) {
         return;
     }
-    flags &= ~O_NONBLOCK; // blocking it
+    flags &= ~O_NONBLOCK; // blocking it，阻塞进程
     flags |= FD_CLOEXEC; // close on exec
     if (fcntl(mine_master_fd, F_SETFL, flags) < 0) {
         return;
     }
 
     // grant and unlock slave
-    char *slave = ptsname(mine_master_fd);
-    if (grantpt(mine_master_fd) != 0 ||
-        unlockpt(mine_master_fd) != 0) {
+    char *slave = ptsname(mine_master_fd);//ptsname() -- 获得从伪终端名(slave pseudo-terminal)
+    if (grantpt(mine_master_fd) != 0 ||unlockpt(mine_master_fd) != 0) {
         return;
     }
 
-    pg->ssh.child = fork();
+    pg->ssh.child = fork();//定义了一个ssh的子进程，如果fork返回0，说明在ssh子进程中
     // child for exec
     if (pg->ssh.child == 0) {
-        setenv("TERM", "xterm", 1);
-        int mine_slave_fd = open(slave, O_RDWR);   // used by ssh
-        setsid();
-        setpgid(0, 0);
-        ioctl(mine_slave_fd, TIOCSCTTY, mine_slave_fd);
+        setenv("TERM", "xterm", 1);//setenv()用来改变或增加环境变量的内容。参数为环境变量名称字符串，变量内容，参数overwrite用来决定是否要改变已存在的环境变量。
+        int mine_slave_fd = open(slave, O_RDWR);   // used by sshopen函数用来打开一个设备，他返回的是一个整型变量，如果这个值等于-1，说明打开文件出现错误，如果为大于0的值，那么这个值代表的就是文件描述符
+        setsid();//重新创建一个session
+        setpgid(0, 0);//将pid进程的进程组ID设置成pgid，创建一个新进程组或加入一个已存在的进程组
+        ioctl(mine_slave_fd, TIOCSCTTY, mine_slave_fd);//设备驱动程序中对设备的I/O通道进行管理的函数
 
-        close(0);
+        close(0);//close ()关闭文件，挂壁open()打开的文件
         close(1);
         close(2);
-        dup2(mine_slave_fd, 0);
+        dup2(mine_slave_fd, 0);//用来复制参数oldfd 所指的文件描述词, 并将它拷贝至参数newfd 后一块返回
         dup2(mine_slave_fd, 1);
         dup2(mine_slave_fd, 2);
 
@@ -132,14 +131,14 @@ static void run_ssh(pg_t *pg)
         printf("\n");
 
         char host[512];
-        memset(host, 0x00, sizeof(host));
-        sprintf(host, "%s@%s", pg->ssh.cfg.user, pg->ssh.cfg.host);
-        execlp(SSH, SSH, host, "-p", pg->ssh.cfg.port, NULL);
+        memset(host, 0x00, sizeof(host));//在一段内存块中填充某个给定的值
+        sprintf(host, "%s@%s", pg->ssh.cfg.user, pg->ssh.cfg.host);//将配置文件里的用户名和host，以类似root@127.0.0.1的方式输出到host中
+        execlp(SSH, SSH, host, "-p", pg->ssh.cfg.port, NULL);//执行系统命令，进行ssh连接
     }
 
     // thread for waitpid
-    pthread_t tid;
-    pthread_create(&tid, NULL, wait_ssh_child, pg);
+    pthread_t tid;//声明线程ID
+    pthread_create(&tid, NULL, wait_ssh_child, pg);//创建一个线程
     
     // for expect
     int already_login = 0;
@@ -148,6 +147,7 @@ static void run_ssh(pg_t *pg)
     int col = 0;
     fd_set set;
     struct timeval tv = {0, 100};
+    //若是ssh没有关闭，则执行下面的循环
     while (pg->ssh.need_stop == 0) {
         // vte_pty的尺寸变化时，修改mine_master_fd,以便它去通知ssh
         if (vte_pty_get_size(pg->ssh.pty, &row, &col, NULL) == TRUE) {
@@ -162,14 +162,15 @@ static void run_ssh(pg_t *pg)
         //
         // 打印ssh返回的输出，并判断是否应该执行自动输入
         //
-        // mine_master_fd -> vte_slave_fd
-        FD_ZERO(&set);
-        FD_SET(mine_master_fd, &set);
+        //vte >> vte_master_fd >> vte_slave_fd >>
+        // this_app >> mine_master_fd >> mine_slave_fd >> ssh
+        FD_ZERO(&set);//将指定的文件描述符集清空
+        FD_SET(mine_master_fd, &set);//用于在文件描述符集合中增加一个新的文件描述符。
         if (select(mine_master_fd+1, &set, NULL, NULL, &tv) > 0) {
             char buf[256];
-            int len = read(mine_master_fd, buf, sizeof(buf));
+            int len = read(mine_master_fd, buf, sizeof(buf));//读文件函数(由已打开的文件读取数据)
             if (len > 0) {
-                write(vte_slave_fd, buf, len);
+                write(vte_slave_fd, buf, len);//write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
 
                 // 如果当前没有登录成功, 自动输入密码
                 if (already_login == 0 && str_is_endwith(buf, len, SSH_PASSWORD)) {
@@ -182,42 +183,43 @@ static void run_ssh(pg_t *pg)
 
         //
         // 读取vte_pty的用户输入，并发送到给ssh
-        //
+        //vte >> vte_master_fd >> vte_slave_fd >> this_app >> mine_master_fd >> mine_slave_fd >> ssh
         // vte_slave_fd -> mine_master_fd
-        FD_ZERO(&set);
-        FD_SET(vte_slave_fd, &set);
+        FD_ZERO(&set);//将指定的文件描述符集清空
+        FD_SET(vte_slave_fd, &set);//用于在文件描述符集合中增加一个新的文件描述符。
         if (select(vte_slave_fd+1, &set, NULL, NULL, &tv) > 0) {
             char buf[256];
-            int len = read(vte_slave_fd, buf, sizeof(buf));
+            int len = read(vte_slave_fd, buf, sizeof(buf));//读文件函数(由已打开的文件读取数据)
             if (len > 0) {
-                write(mine_master_fd, buf, len);
+                write(mine_master_fd, buf, len);//write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
             }
         }
 
-        usleep(1000);
+        usleep(1000);//usleep功能把进程挂起一段时间， 单位是微秒（百万分之一秒）；
     }
 
     //vte_pty_close(pg->ssh.pty);//命令已过期，暂时禁用
 }
-
+//定义主进程，根据type的值打开shell和ssh
 static void *work(void *p)
 {
     pg_t *pg = (pg_t*) p;
+    //type枚举
     switch (pg->type) {
     case PG_TYPE_SHELL:
-        run_shell(pg); // block here;
+        run_shell(pg); // 打开shell。block here;
         break;
 
-    case PG_TYPE_SSH:  // block here;
-        run_ssh(pg);
+    case PG_TYPE_SSH:  
+        run_ssh(pg); // 打开ssh，block here;
         break;
 
     default:
-        break;
+        break;//直接退出
     }
 
     //gdk_threads_enter(); 命令已过期，暂时禁用
-    int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);
+    int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);//笔记本控件，能够让用户标签式地切换多个界面。
     gtk_notebook_remove_page(GTK_NOTEBOOK(m_notebook), num);
     //gdk_threads_leave();命令已过期，暂时禁用
 
@@ -251,7 +253,7 @@ static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
     gtk_widget_grab_focus(page);
 }
-
+//定义点击的时候窗口显示
 static void on_btn_clicked(GtkToolButton *item, gpointer user_data)
 {
     GtkWidget *btn = (GtkWidget*) user_data;
@@ -315,7 +317,7 @@ static void on_notebook_switch(GtkNotebook *notebook, GtkWidget *page,
         gtk_widget_grab_focus(page);
     }
 }
-
+//关闭对应page
 static void on_close_clicked(GtkWidget *widget, gpointer user_data)
 {
     pg_t *pg = (pg_t*) user_data;
@@ -355,53 +357,6 @@ static gboolean on_vte_button_press(GtkWidget *widget, GdkEvent *event, gpointer
 
     return FALSE;
 }
-/*过时语句太多，暂时关闭
-static int menu_create()
-{
-    int row = 0;
-    GtkWidget *mi = NULL;
-
-    m_menu = gtk_menu_new();
-
-    m_menu_copy  = gtk_menu_item_new_with_label("Copy");
-    gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(m_menu_copy),
-                                  img_from_stock(GTK_STOCK_COPY, GTK_ICON_SIZE_MENU));
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(m_menu_copy), TRUE);
-    g_signal_connect(G_OBJECT(m_menu_copy), "activate", G_CALLBACK(on_menu_copy_clicked), NULL);
-    gtk_menu_attach(GTK_MENU(m_menu), m_menu_copy, 0, 1, row, row+1);
-    row++;
-
-    m_menu_paste  = gtk_menu_item_new_with_label("Paste");
-    gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(m_menu_paste),
-                                  img_from_stock(GTK_STOCK_PASTE, GTK_ICON_SIZE_MENU));
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(m_menu_paste), TRUE);
-    g_signal_connect(G_OBJECT(m_menu_paste), "activate", G_CALLBACK(on_menu_paste_clicked), NULL);
-    gtk_menu_attach(GTK_MENU(m_menu), m_menu_paste, 0, 1, row, row+1);
-    row++;
-
-    m_menu_copy_paste = gtk_menu_item_new_with_label("Copy & Paste");
-    g_signal_connect(G_OBJECT(m_menu_copy_paste), "activate", G_CALLBACK(on_menu_copy_paste_clicked), NULL);
-    gtk_menu_attach(GTK_MENU(m_menu), m_menu_copy_paste, 0, 1, row, row+1);
-    row++;
-
-    // separator
-    mi = gtk_separator_menu_item_new();
-    gtk_menu_attach(GTK_MENU(m_menu), mi, 0, 1, row, row+1);
-    row++;
-
-    mi = gtk_menu_item_new_with_label("Close");
-    gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(mi), img_from_stock(GTK_STOCK_CLOSE, GTK_ICON_SIZE_MENU));
-    gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(mi), TRUE);
-    g_signal_connect(G_OBJECT(mi), "activate", G_CALLBACK(page_close_select), NULL);
-    gtk_menu_attach(GTK_MENU(m_menu), mi, 0, 1, row, row+1);
-    row++;
-
-    gtk_widget_show_all(m_menu);
-
-    return 0;
-}
-*/
-
 int page_init(GtkWidget *hub_page) 
 {
     // popup menu
@@ -568,7 +523,7 @@ gint page_ssh_create(cfg_t *cfg)
     pg->ssh.vte = vte;
     //vte_terminal_set_emulation((VteTerminal*) vte, "xterm");//warning: implicit declaration of function ‘vte_terminal_set_emulation’
     gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
-    //pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 未定义，暂时禁用
+    //pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接
     vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
     vte_terminal_set_font_scale((VteTerminal*)vte, 0);
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
@@ -678,7 +633,7 @@ void page_set_auto_focus(int b)
 {
     m_auto_focus = (b!=0);
 }
-
+//定义关闭页面
 int page_close(int n)
 {
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), n);
@@ -692,7 +647,7 @@ int page_close(int n)
 
     return 0;
 }
-
+//定义关闭选中页面
 int page_close_select()
 {
     return page_close(page_get_select_num());
