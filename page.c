@@ -523,7 +523,7 @@ gint page_ssh_create(cfg_t *cfg)
     pg->ssh.vte = vte;
     //vte_terminal_set_emulation((VteTerminal*) vte, "xterm");//warning: implicit declaration of function ‘vte_terminal_set_emulation’
     gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
-    //pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接
+    pg->ssh.pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接
     vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
     vte_terminal_set_font_scale((VteTerminal*)vte, 0);
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
