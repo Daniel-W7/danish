@@ -1,13 +1,13 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define PACKAGE     "jnXssh"
+#define PACKAGE     "danish"
 #define VERSION     "1.0"
-#define AUTHOR      "Niu Chenguang"
-#define EMAIL       "chrisniu1984@gmail.com"
-#define COPYRIGHT   " Copyright (c) 2011-2012 " AUTHOR " <" EMAIL "> "
+#define AUTHOR      "Daniel Wang"
+#define EMAIL       "wanghaidi7@gmail.com"
+#define COPYRIGHT   " Copyright (c) 2021-2022 " AUTHOR " <" EMAIL "> "
 
-#define CONFIG_DIR    ".jnXssh"
+#define CONFIG_DIR    ".danish"
 
 extern const char *HOME; // $HOME
 extern char PATH[256];  // $HOME + CONFIG_DIR

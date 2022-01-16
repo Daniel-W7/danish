@@ -79,7 +79,7 @@ static int window_create_show()
     tmp = get_res_path(ICON_APP);
     gtk_window_set_icon_from_file(GTK_WINDOW(m_window), tmp, NULL);
     free(tmp);
-    gtk_window_set_title(GTK_WINDOW(m_window), "jnXssh");
+    gtk_window_set_title(GTK_WINDOW(m_window), "danish");
     gtk_window_maximize(GTK_WINDOW(m_window));
     gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
     g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
@@ -96,7 +96,7 @@ static int window_create_show()
             // pty + vte
             GtkWidget *vte = vte_terminal_new();
             gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
-            vte_terminal_set_size((VteTerminal*)vte, 1, 1);
+            vte_terminal_set_size((VteTerminal*)vte, 10, 10);
 	    VtePty *pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
             vte_terminal_set_pty((VteTerminal*)vte, pty);
             //pthread_t tid;

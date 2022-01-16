@@ -1,4 +1,4 @@
-TARGET = jnXssh
+TARGET = danish
 OBJS = main.o page.o site.opp
 
 HEADER = config.h
@@ -16,11 +16,11 @@ $(TARGET): $(OBJS)
 	gcc -c $(CXXFLAGS) -o $@ $<
 
 install: ${TARGET}
-	sudo desktop-file-install jnXssh.desktop
+	sudo desktop-file-install danish.desktop
 	sudo cp ${TARGET} /usr/local/bin/
-	mkdir -p ${HOME}/.jnXssh/
-	cp -r res ${HOME}/.jnXssh/
-	if [ ! -f ${HOME}/.jnXssh/site.xml ]; then cp site.xml.tmpl ${HOME}/.jnXssh/site.xml; fi
+	mkdir -p ${HOME}/.danish/
+	cp -r res ${HOME}/.danish/
+	if [ ! -f ${HOME}/.danish/site.xml ]; then cp site.xml.tmpl ${HOME}/.danish/site.xml; fi
 	rm -rf $(TARGET) $(OBJS)
 	rm -rf cscope*
 clean:
