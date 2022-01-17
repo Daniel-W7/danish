@@ -486,7 +486,7 @@ gint page_ssh_create(cfg_t *cfg)
     g_signal_connect(G_OBJECT(pg->head.button), "clicked", G_CALLBACK(on_close_clicked), pg);
     gtk_widget_show_all(pg->head.box);
 
-    // body container
+    // body container,用于打开ssh界面
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     pg->body = vbox;

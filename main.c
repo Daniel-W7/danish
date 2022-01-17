@@ -61,7 +61,6 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             key->keyval == GDK_KEY_Page_Up) {
             int num = page_get_select_num();
             num--;
-
             page_set_select_num(num);
             return TRUE;
         }
@@ -75,13 +74,21 @@ static int window_create_show()
 {
     char *tmp;
 
-    // window
+    // window,定义窗口
     m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     tmp = get_res_path(ICON_APP);
-    gtk_window_set_icon_from_file(GTK_WINDOW(m_window), tmp, NULL);
+    //gtk_window_set_icon_from_file(GTK_WINDOW(m_window), tmp, NULL);
     free(tmp);
-    gtk_window_set_title(GTK_WINDOW(m_window), "danish");
+    gtk_window_set_title(GTK_WINDOW(m_window), "danish");//设置窗口名称
     gtk_window_maximize(GTK_WINDOW(m_window));
+	gtk_window_set_position(GTK_WINDOW(m_window),GTK_WIN_POS_NONE);//设置窗口在显示器中的位置为居中
+		/*
+		   	GTK_WIN_POS_NONE： 不固定
+			GTK_WIN_POS_CENTER: 居中
+			GTK_WIN_POS_MOUSE: 出现在鼠标位置
+			GTK_WIN_POS_CENTER_ALWAYS: 窗口总是居中
+		 */
+	gtk_widget_set_size_request(m_window,970,600);//设置窗口的初始大小，黄金比例1：1.618
     gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
     g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
     g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
@@ -94,12 +101,12 @@ static int window_create_show()
             GtkWidget *notebook = page_get_notebook();
             gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-            // pty + vte
-            GtkWidget *vte = vte_terminal_new();
-            gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
-            vte_terminal_set_size((VteTerminal*)vte, 10, 10);
-		    VtePty *pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
-            vte_terminal_set_pty((VteTerminal*)vte, pty);
+            // pty + vte,与最下面的字符输入窗口相关，暂时关闭
+            //GtkWidget *vte = vte_terminal_new();
+            //gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
+            //vte_terminal_set_size((VteTerminal*)vte, 10, 10);
+		    //VtePty *pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
+            //vte_terminal_set_pty((VteTerminal*)vte, pty);
             //pthread_t tid;
             //pthread_create(&tid, NULL, proc_allvte, pty);
 
