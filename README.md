@@ -46,3 +46,7 @@ GITee地址：https://gitee.com/daniel-w7/danish
 4、配置文件路径
 
 	~/.danish/site.xml
+
+5、启动方法
+	
+	danish
