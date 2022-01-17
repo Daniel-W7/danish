@@ -98,7 +98,7 @@ static int window_create_show()
             GtkWidget *vte = vte_terminal_new();
             gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
             vte_terminal_set_size((VteTerminal*)vte, 10, 10);
-	    VtePty *pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
+		    VtePty *pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
             vte_terminal_set_pty((VteTerminal*)vte, pty);
             //pthread_t tid;
             //pthread_create(&tid, NULL, proc_allvte, pty);

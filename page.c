@@ -392,14 +392,14 @@ int page_init(GtkWidget *hub_page)
 
     return 0;
 }
-
+/*
 int page_term()
 {
     page_foreach_close();
 
     return 0;
 }
-
+*/
 gint page_shell_create()
 {
     char *tmp;
@@ -530,7 +530,7 @@ gint page_ssh_create(cfg_t *cfg)
     vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
     vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);//定义pty终端缩放的大小
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
-    vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
+    //vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
     //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
 
     // page
@@ -547,7 +547,7 @@ gint page_ssh_create(cfg_t *cfg)
 
     return num;
 }
-
+/*
 int page_foreach_close()
 {
     int i;
@@ -592,7 +592,6 @@ int page_foreach_send_string(char *str)
 
     return 0;
 }
-/*
 int page_send_string(int i, char *str)
 {
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
