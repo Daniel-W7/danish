@@ -25,10 +25,10 @@
 //添加gtk组件
 
 static GtkWidget *m_notebook;
-static GtkWidget *m_menu;
-static GtkWidget *m_menu_copy;
-static GtkWidget *m_menu_paste;
-static GtkWidget *m_menu_copy_paste;
+//static GtkWidget *m_menu;
+//static GtkWidget *m_menu_copy;
+//static GtkWidget *m_menu_paste;
+//static GtkWidget *m_menu_copy_paste;
 
 static int m_auto_focus = 1;
 //定义pg->type == PG_TYPE_SSH的情况
@@ -225,7 +225,7 @@ static void *work(void *p)
 
     return NULL;
 }
-/*暂时禁用
+/*暂时禁用on_menu_copy_clicked
 static void on_menu_copy_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
@@ -240,11 +240,12 @@ static void on_menu_copy_clicked(GtkMenuItem *menuitem, gpointer user_data)
         vte = (VteTerminal*) pg->ssh.vte;
     }
 
-    //vte_terminal_copy_clipboard(vte);命令已过期，暂时禁用
-    //vte_terminal_select_none(vte);命令已过期，暂时禁用
+    vte_terminal_copy_clipboard(vte);//命令已过期，暂时禁用
+    vte_terminal_select_none(vte);//命令已过期，暂时禁用
 }
 */
-//定义命令输入的执行过程
+/*
+//定义快捷按钮命令的执行方法
 static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
@@ -253,12 +254,13 @@ static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
     gtk_widget_grab_focus(page);
 }
-//定义点击的时候窗口显示
+//定义窗口快捷按钮
 static void on_btn_clicked(GtkToolButton *item, gpointer user_data)
 {
     GtkWidget *btn = (GtkWidget*) user_data;
     gtk_menu_popup_at_pointer(GTK_MENU(btn),NULL);
 }
+*/
 /*
 static void on_menu_copy_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
@@ -324,7 +326,7 @@ static void on_close_clicked(GtkWidget *widget, gpointer user_data)
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);
     page_close(num);
 }
-
+/*
 // 右键显示菜单
 static gboolean on_vte_button_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
@@ -351,36 +353,37 @@ static gboolean on_vte_button_press(GtkWidget *widget, GdkEvent *event, gpointer
         }
         
         // popup menu
-        //gtk_menu_popup_at_pointer(GTK_MENU(m_menu),button->time);;
-        gtk_menu_popup_at_pointer(GTK_MENU(m_menu),NULL);;
+        gtk_menu_popup_at_pointer(GTK_MENU(m_menu),event);;
+        //gtk_menu_popup_at_pointer(GTK_MENU(m_menu),NULL);;
     }
 
     return FALSE;
 }
+*/
 int page_init(GtkWidget *hub_page) 
 {
-    // popup menu
+    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
+	// popup menu
     //menu_create();//implicit declaration of function ‘menu_create’
 
     // notebook
     m_notebook = gtk_notebook_new();
     g_signal_connect_after(G_OBJECT(m_notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
 
-    // 添加 hub 标签
+/*    // 添加 hub 标签，暂时禁用
     // tab = hbox + label + button
-    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
     bzero(pg, sizeof(pg_t));
     pg->type = PG_TYPE_HUB;
     pg->head.box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    //pg->head.image = img_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);//warning: ‘GtkStock’ is deprecated 
+    pg->head.image = img_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);//warning: ‘GtkStock’ is deprecated 
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
     gtk_widget_show_all(pg->head.box);
-
+*/
     // body
     pg->body = hub_page;
     g_object_set_data(G_OBJECT(pg->body), "pg", pg);
 
-    // page
+    // page,定义站点显示
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
 
@@ -431,7 +434,7 @@ gint page_shell_create()
     vte_terminal_set_scrollback_lines((VteTerminal*)pg->shell.vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->shell.vte, 1);
     g_object_set_data(G_OBJECT(pg->shell.vte), "pg", pg);
-    g_signal_connect(G_OBJECT(pg->shell.vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
+    //g_signal_connect(G_OBJECT(pg->shell.vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
 
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
@@ -488,8 +491,8 @@ gint page_ssh_create(cfg_t *cfg)
 
     pg->body = vbox;
     g_object_set_data(G_OBJECT(pg->body), "pg", pg);
-
-    // toolbar
+/*
+    // toolbar,暂时禁用
     GtkWidget *toolbar = gtk_toolbar_new();
     gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, FALSE, 0);
     gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_BOTH);
@@ -501,14 +504,14 @@ gint page_ssh_create(cfg_t *cfg)
             gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 
             GtkWidget *menu = gtk_menu_new();
-            g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_btn_clicked), menu);
+            //g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_btn_clicked), menu);
             //gtk_menu_tool_button_set_menu(GTK_MENU_TOOL_BUTTON(item), menu);
 
             int j = 0;
             for (j=0; j<CMD_MAX_COUNT && cfg->btn[i].cmd[j].name[0] != '\0'; j++) {
                 GtkWidget *cmd = gtk_menu_item_new_with_label(cfg->btn[i].cmd[j].name);
                 gtk_menu_attach(GTK_MENU(menu), cmd, 0, 1, j, j+1);
-                g_signal_connect(G_OBJECT(cmd), "activate", G_CALLBACK(on_cmd_clicked), cfg->btn[i].cmd[j].str);
+              //  g_signal_connect(G_OBJECT(cmd), "activate", G_CALLBACK(on_cmd_clicked), cfg->btn[i].cmd[j].str);
             }
             gtk_widget_show_all(menu);
 
@@ -517,7 +520,7 @@ gint page_ssh_create(cfg_t *cfg)
             item = gtk_separator_tool_item_new();
             gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
         }
-
+*/
     // pty + vte
     GtkWidget *vte = vte_terminal_new();
     pg->ssh.vte = vte;
@@ -528,7 +531,7 @@ gint page_ssh_create(cfg_t *cfg)
     vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);//定义pty终端缩放的大小
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
-    g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
+    //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
 
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
@@ -589,7 +592,7 @@ int page_foreach_send_string(char *str)
 
     return 0;
 }
-
+/*
 int page_send_string(int i, char *str)
 {
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
@@ -601,14 +604,15 @@ int page_send_string(int i, char *str)
 
     return 0;
 }
-
+*/
+/*
 int page_send_string_crlf(int i, char *str)
 {
     page_send_string(i, str);
     page_send_string(i, "\n");
     return 0;
 }
-
+*/
 GtkWidget *page_get_notebook()
 {
     return m_notebook;
