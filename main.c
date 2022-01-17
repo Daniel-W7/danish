@@ -40,6 +40,7 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             return TRUE;
         }
     }
+	/*无法使用，暂时禁用
     else if (key->state & GDK_CONTROL_MASK) {
 
         // 按下Ctrl+Right时，向右移动
@@ -65,7 +66,7 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             return TRUE;
         }
     }
-
+	*/
     return FALSE;
 }
 
