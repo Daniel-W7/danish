@@ -1,5 +1,4 @@
 #include <stdlib.h>
-
 //#include <glib-object.h>
 //#include <glib/gthread.h>
 #include <string>
@@ -10,6 +9,7 @@
 
 #include "page.h"
 #include "site.h"
+/*用于在通过站点文件获取站点信息*/
 //定义站点文件
 #define SITEFILE   "site.xml"
 //定义gtk窗口

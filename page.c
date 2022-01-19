@@ -25,7 +25,8 @@
 //添加gtk组件
 
 static GtkWidget *m_notebook;
-
+static GtkWidget *m_sidebar;
+static GtkWidget *stack;
 static int m_auto_focus = 1;
 //定义pg->type == PG_TYPE_SSH的情况
 static void *wait_ssh_child(void *p)
@@ -240,18 +241,28 @@ static void on_close_clicked(GtkWidget *widget, gpointer user_data)
 int page_init(GtkWidget *hub_page) 
 {
     pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
+	
+	//sidebar
+	m_sidebar = gtk_stack_sidebar_new();
+    //定义stack,栈，用于定义sidebar的内容
+	//stack = gtk_stack_new();
+	//将sidebar和stack连接起来
+	//gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(m_sidebar), GTK_STACK(stack));
 
-    // notebook
+	// notebook
     m_notebook = gtk_notebook_new();
+	//允许切换notebook页面
     g_signal_connect_after(G_OBJECT(m_notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
 
-    // body
+    // body,定义页面主要内容
     pg->body = hub_page;
     g_object_set_data(G_OBJECT(pg->body), "pg", pg);
 
     // page,定义站点显示
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
+	//gtk_stack_add_named(GTK_STACK(stack), pg->body , "sidebar");
+	//gtk_container_child_set(GTK_CONTAINER(stack), m_sidebar , "title","sidebar", NULL);
 
     gtk_widget_show_all(m_notebook);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), num);
@@ -375,6 +386,12 @@ gint page_ssh_create(cfg_t *cfg)
 
     return num;
 }
+//定义一个main程序获取sidebar组件的程序
+GtkWidget *page_get_sidebar()
+{
+	return m_sidebar;
+}
+//定义一个main程序获取notebook组件的程序
 GtkWidget *page_get_notebook()
 {
     return m_notebook;

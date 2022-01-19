@@ -68,36 +68,31 @@ static int window_create_show()
 	gtk_widget_set_size_request(m_window,970,600);//设置窗口的初始大小，黄金比例1：1.618
     
 	//创建窗口容器vbox，用来显示配置信息,配置为VERTICAL，纵向显示组件
-	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	//vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
 		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);//横向显示窗口,显示侧边栏
-	/*		//横向第一个窗口
-		    sidebar = gtk_stack_sidebar_new();//定义侧边栏
-			gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);//侧边栏hbox里面显示sidebar
-			stack = gtk_stack_new();//定义stack,栈，用于定义sidebar的内容
-			gtk_stack_set_transition_type(GTK_STACK(stack),GTK_STACK_TRANSITION_TYPE_SLIDE_UP);//站点的切换的效果是往上的
-			gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));//将sidebar和stack连接起来
-			gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);//侧边栏hbox里面显示stack的内容
-	*/
-	/*
-			//横向第二个窗口
-			//第一个图标
-			widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);//定义图标widget
-			gtk_image_set_pixel_size(GTK_IMAGE(widget), 150);//定义图标大小
-			gtk_stack_add_named(GTK_STACK(stack), widget, "angry");//将图标加入到stack中，并与字符angry对应
-			gtk_container_child_set(GTK_CONTAINER(stack), widget, "title", "angry", NULL);//配置容器中的图标和字符对应策略
-			//第二个图标
-			gtk_stack_add_named(GTK_STACK(stack), notebook , "sick");
-			gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
-  */
-			// notebook
+	
+		//横向第一个窗口,sidebar
+		    //定义侧边栏
+		    sidebar = page_get_sidebar();
+			//侧边栏hbox里面显示sidebar
+			gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);
+			//定义stack,栈，用于定义sidebar的内容
+			//stack = gtk_stack_new();
+			//gtk_stack_set_transition_type(GTK_STACK(stack),GTK_STACK_TRANSITION_TYPE_SLIDE_UP);
+			//将sidebar和stack连接起来
+			//gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));
+			//侧边栏hbox里面显示stack的内容
+			//gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);
+	
+		//横向第二个窗口 notebook
 			notebook = page_get_notebook();
-//			gtk_stack_add_named(GTK_STACK(stack), notebook , "sick");
-//			gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
-
+			//gtk_stack_add_named(GTK_STACK(stack), pg->body , "sick");
+			//gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
 			gtk_box_pack_start(GTK_BOX(hbox), notebook, TRUE, TRUE, 1);
-
-	gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);//显示vbox和hbox
-    gtk_container_add(GTK_CONTAINER(m_window), vbox);
+	
+	//gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);//显示vbox和hbox
+    gtk_container_add(GTK_CONTAINER(m_window), hbox);
 	
 	gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
     g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
@@ -148,7 +143,9 @@ int main(int argc, char **argv)
     site_load();
 
     // 创建tab容器（使用site页作为hub_page)
-    GtkWidget *hub = site_get_object();
+    //读取site的配置信息
+	GtkWidget *hub = site_get_object();
+	//初始化页面
     page_init(hub);
     gtk_widget_grab_focus(hub);
 
