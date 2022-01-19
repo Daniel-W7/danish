@@ -2,7 +2,7 @@
 #define __CONFIG_H__
 
 #define PACKAGE     "danish"
-#define VERSION     "0.01"
+#define VERSION     "0.02"
 #define AUTHOR      "Daniel Wang"
 #define EMAIL       "wanghaidi7@gmail.com"
 #define COPYRIGHT   "Copyright (c) 2021-2022 " AUTHOR " <" EMAIL "> "

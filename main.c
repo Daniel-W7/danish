@@ -71,12 +71,12 @@ static int window_create_show()
 	//vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
 		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);//横向显示窗口,显示侧边栏
-	
+		//gtk_container_add(GTK_CONTAINER(m_window), hbox);	
 		//横向第一个窗口,sidebar
 		    //定义侧边栏
-		    sidebar = page_get_sidebar();
+		    //sidebar = page_get_sidebar();
 			//侧边栏hbox里面显示sidebar
-			gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);
+			//gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);
 			//定义stack,栈，用于定义sidebar的内容
 			//stack = gtk_stack_new();
 			//gtk_stack_set_transition_type(GTK_STACK(stack),GTK_STACK_TRANSITION_TYPE_SLIDE_UP);
@@ -87,6 +87,9 @@ static int window_create_show()
 	
 		//横向第二个窗口 notebook
 			notebook = page_get_notebook();
+			//定义notebook初始页面的名称
+			//GtkWidget *label = gtk_label_new("Page one");
+			//gtk_notebook_append_page(GTK_NOTEBOOK(notebook), hbox, label);
 			//gtk_stack_add_named(GTK_STACK(stack), pg->body , "sick");
 			//gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
 			gtk_box_pack_start(GTK_BOX(hbox), notebook, TRUE, TRUE, 1);

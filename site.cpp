@@ -86,7 +86,7 @@ int site_init()
     //树节点，窗口显示配置
 	gtk_box_pack_start(GTK_BOX(m_vbox), m_treeview, TRUE, TRUE, 0);
 	//配置是否显示headers
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (m_treeview), TRUE);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (m_treeview), FALSE);
 	//配置树节点里面的站点可以双击打开
 	g_signal_connect(GTK_WIDGET(m_treeview), "row-activated", G_CALLBACK(on_treeview_row_activated), NULL);
     //不影响功能，暂时禁用  
