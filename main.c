@@ -20,6 +20,12 @@
 #include "site.h"
 //gtk初始化组件
 GtkWidget *m_window;
+GtkWidget *hbox;//横向窗口
+GtkWidget *vbox;//纵向窗口
+GtkWidget *sidebar;
+GtkWidget *stack;
+GtkWidget *widget;
+GtkWidget *notebook;
 //定义窗口打开关闭移动的操作
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
@@ -40,47 +46,18 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             return TRUE;
         }
     }
-	/*无法使用，暂时禁用
-    else if (key->state & GDK_CONTROL_MASK) {
-
-        // 按下Ctrl+Right时，向右移动
-        if (key->keyval == GDK_KEY_Right ||
-            key->keyval == GDK_KEY_Page_Down) {
-            int num = page_get_select_num();
-            int count = page_get_count();
-            num++;
-            if (num >= count) {
-                num = 0;
-            }
-
-            page_set_select_num(num);
-            return TRUE;
-        }
-        // 按下Ctrl+Left时，向左移动
-        if (key->keyval == GDK_KEY_Left ||
-            key->keyval == GDK_KEY_Page_Up) {
-            int num = page_get_select_num();
-            num--;
-            page_set_select_num(num);
-            return TRUE;
-        }
-    }
-	*/
     return FALSE;
 }
 
 //创建窗口
 static int window_create_show()
 {
-    char *tmp;
+    //char *tmp;
 
-    // window,定义窗口
+    // window,初始化定义窗口
     m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    tmp = get_res_path(ICON_APP);
-    //gtk_window_set_icon_from_file(GTK_WINDOW(m_window), tmp, NULL);
-    free(tmp);
     gtk_window_set_title(GTK_WINDOW(m_window), "danish");//设置窗口名称
-    gtk_window_maximize(GTK_WINDOW(m_window));
+	//gtk_window_maximize(GTK_WINDOW(m_window));//设置全屏显示,注释掉似乎也不影响显示
 	gtk_window_set_position(GTK_WINDOW(m_window),GTK_WIN_POS_NONE);//设置窗口在显示器中的位置为居中
 		/*
 		   	GTK_WIN_POS_NONE： 不固定
@@ -89,28 +66,44 @@ static int window_create_show()
 			GTK_WIN_POS_CENTER_ALWAYS: 窗口总是居中
 		 */
 	gtk_widget_set_size_request(m_window,970,600);//设置窗口的初始大小，黄金比例1：1.618
-    gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
-    g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
-    g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
     
-        // vbox
-        GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-        gtk_container_add(GTK_CONTAINER(m_window), vbox);
+	//创建窗口容器vbox，用来显示配置信息,配置为VERTICAL，纵向显示组件
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);//横向显示窗口,显示侧边栏
+	/*		//横向第一个窗口
+		    sidebar = gtk_stack_sidebar_new();//定义侧边栏
+			gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);//侧边栏hbox里面显示sidebar
+			stack = gtk_stack_new();//定义stack,栈，用于定义sidebar的内容
+			gtk_stack_set_transition_type(GTK_STACK(stack),GTK_STACK_TRANSITION_TYPE_SLIDE_UP);//站点的切换的效果是往上的
+			gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));//将sidebar和stack连接起来
+			gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);//侧边栏hbox里面显示stack的内容
+	*/
+	/*
+			//横向第二个窗口
+			//第一个图标
+			widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);//定义图标widget
+			gtk_image_set_pixel_size(GTK_IMAGE(widget), 150);//定义图标大小
+			gtk_stack_add_named(GTK_STACK(stack), widget, "angry");//将图标加入到stack中，并与字符angry对应
+			gtk_container_child_set(GTK_CONTAINER(stack), widget, "title", "angry", NULL);//配置容器中的图标和字符对应策略
+			//第二个图标
+			gtk_stack_add_named(GTK_STACK(stack), notebook , "sick");
+			gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
+  */
+			// notebook
+			notebook = page_get_notebook();
+//			gtk_stack_add_named(GTK_STACK(stack), notebook , "sick");
+//			gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
 
-            // notebook
-            GtkWidget *notebook = page_get_notebook();
-            gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
+			gtk_box_pack_start(GTK_BOX(hbox), notebook, TRUE, TRUE, 1);
 
-            // pty + vte,与最下面的字符输入窗口相关，暂时关闭
-            //GtkWidget *vte = vte_terminal_new();
-            //gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
-            //vte_terminal_set_size((VteTerminal*)vte, 10, 10);
-		    //VtePty *pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
-            //vte_terminal_set_pty((VteTerminal*)vte, pty);
-            //pthread_t tid;
-            //pthread_create(&tid, NULL, proc_allvte, pty);
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);//显示vbox和hbox
+    gtk_container_add(GTK_CONTAINER(m_window), vbox);
+	
+	gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
+    g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
+	g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);//定义点击关闭退出
 
-    gtk_widget_show_all(m_window);
+	gtk_widget_show_all(m_window);
 
     return 0;
 }

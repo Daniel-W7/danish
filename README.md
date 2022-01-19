@@ -17,7 +17,7 @@ GITee地址：https://gitee.com/daniel-w7/danish
 
 		sudo apt-get install libtinyxml2.6.2v5
 
-2、编译所需
+2、编译安装所需
 
 	对于Debian 11 需要安装以下额外包:
 
@@ -33,9 +33,11 @@ GITee地址：https://gitee.com/daniel-w7/danish
 
 	libvte-2.91-dev
 
+	desktop-file-utils
+
 	安装命令：
 
-		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++
+		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils
 
 3、编译方法
 	

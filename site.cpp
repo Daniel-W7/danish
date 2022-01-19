@@ -12,15 +12,15 @@
 #include "site.h"
 //定义站点文件
 #define SITEFILE   "site.xml"
-
+//定义gtk窗口
 extern GtkWidget *m_window;
 
 static char *m_sitefile = NULL;
-static TiXmlDocument *m_doc = NULL;
+static TiXmlDocument *m_doc = NULL;//对应xml整个文档
 //添加gtk组件
 static GtkWidget *m_object = NULL;
 static GtkWidget *m_vbox = NULL;
-static GtkWidget *m_toolbar = NULL;
+//static GtkWidget *m_toolbar = NULL;
 static GtkTreeStore *m_treestore = NULL;
 static GtkWidget *m_treeview = NULL;
 
@@ -35,10 +35,12 @@ enum {
 void on_treeview_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data) 
 {
     GValue value = {0,};
+	//定义迭代，并将迭代定义为指向路径path
     GtkTreeIter iter;
     gtk_tree_model_get_iter(GTK_TREE_MODEL(m_treestore), &iter, path);
+	//初始化并定义value
     gtk_tree_model_get_value(GTK_TREE_MODEL(m_treestore), &iter, COL_CFG,  &value);
-
+	//读取site.xml的文件信息
     cfg_t *cfg = (cfg_t*) g_value_get_pointer(&value);
     if (cfg) {
         page_ssh_create(cfg);
@@ -63,12 +65,12 @@ int site_init()
     // main container，主界面
     m_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     m_object = m_vbox;
-
+/*定义toolbar，暂时禁用
     // toolbar
     m_toolbar = gtk_toolbar_new();
     gtk_toolbar_set_style(GTK_TOOLBAR(m_toolbar), GTK_TOOLBAR_BOTH);
     gtk_box_pack_start(GTK_BOX(m_vbox), m_toolbar, FALSE, FALSE, 0);
-
+*/
     // tree_store
     m_treestore = gtk_tree_store_new(NUM_COLS, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_POINTER);
     if (m_treestore == NULL) {
@@ -81,13 +83,16 @@ int site_init()
         return -1;
     }
     gtk_tree_view_set_model(GTK_TREE_VIEW(m_treeview), GTK_TREE_MODEL(m_treestore));
-    gtk_box_pack_start(GTK_BOX(m_vbox), m_treeview, TRUE, TRUE, 0);
-
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (m_treeview), FALSE);
-    g_signal_connect(GTK_WIDGET(m_treeview), "row-activated", G_CALLBACK(on_treeview_row_activated), NULL);
-    GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(m_treeview));
-    gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
-
+    //树节点，窗口显示配置
+	gtk_box_pack_start(GTK_BOX(m_vbox), m_treeview, TRUE, TRUE, 0);
+	//配置是否显示headers
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (m_treeview), TRUE);
+	//配置树节点里面的站点可以双击打开
+	g_signal_connect(GTK_WIDGET(m_treeview), "row-activated", G_CALLBACK(on_treeview_row_activated), NULL);
+    //不影响功能，暂时禁用  
+    //GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(m_treeview));
+    //gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
+    //配置一个子tree的创建
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
 
@@ -105,7 +110,7 @@ int site_init()
 
     return 0;
 }
-
+//删除站点文件，释放内存空间
 void site_term()
 {
     delete m_doc;
@@ -214,18 +219,19 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
 //进行站点加载
 int site_load()
 {
+		//判断，如果能正常访问站点文件的话
     if (access(m_sitefile, R_OK|W_OK) == 0) {
-        // 清理
+        // 清理旧的记录
         m_doc->Clear();
         gtk_tree_store_clear(GTK_TREE_STORE(m_treestore));  
 
-        // 打开
+        // 打开站点文件的配置
         m_doc->LoadFile(m_sitefile);
         if (m_doc->Error()) {
             printf("[%d,%d] %s", m_doc->ErrorRow(), m_doc->ErrorCol() , m_doc->ErrorDesc());
             return -1;
         }
-
+		//找到root节点
         TiXmlElement *root = m_doc->RootElement();
         if (root == NULL) {
             printf("error\n");
