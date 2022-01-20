@@ -25,8 +25,8 @@
 //添加gtk组件
 
 static GtkWidget *m_notebook;
-//static GtkWidget *m_sidebar;
-//static GtkWidget *stack;
+static GtkWidget *m_sidebar;
+static GtkWidget *stack;
 static int m_auto_focus = 1;
 //定义pg->type == PG_TYPE_SSH的情况
 static void *wait_ssh_child(void *p)
@@ -238,45 +238,50 @@ static void on_close_clicked(GtkWidget *widget, gpointer user_data)
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);
     page_close(num);
 }
+//初始化页面显示
 int page_init(GtkWidget *hub_page) 
 {
-    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
+	pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
 	
-	//sidebar
-	//m_sidebar = gtk_stack_sidebar_new();
-    //定义stack,栈，用于定义sidebar的内容
-	//stack = gtk_stack_new();
-	//将sidebar和stack连接起来
-	//gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(m_sidebar), GTK_STACK(stack));
-
 	// notebook
-    m_notebook = gtk_notebook_new();
-	//允许切换notebook页面
-    g_signal_connect_after(G_OBJECT(m_notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
-    
-	// 添加 hub 标签
-	    // tab = hbox + label + button
-	  //  bzero(pg, sizeof(pg_t));
-	   // pg->type = PG_TYPE_HUB;   
-        pg->head.label = gtk_label_new("Sessions");
-	//	pg->head.box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	    //pg->head.image = img_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
-	  //  gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.label, FALSE, FALSE, 10);
-	   // gtk_widget_show_all(pg->head.box);
+	m_notebook = gtk_notebook_new();
+		//允许切换notebook页面
+		g_signal_connect_after(G_OBJECT(m_notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
+		//定义notebook显示的label
+        	pg->head.label = gtk_label_new("Sessions");
 	
 	// body,定义页面主要内容
-    pg->body = hub_page;
-    g_object_set_data(G_OBJECT(pg->body), "pg", pg);
+	pg->body = hub_page;
+	g_object_set_data(G_OBJECT(pg->body), "pg", pg);
+	
+	// page,定义notebook初始页面显示
+    	gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.label);
+    	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
 
-    // page,定义站点显示
-    gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.label);
-    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
+	gtk_widget_show_all(m_notebook);
+    	gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), num);
+	
+	// page,定义sidebar初始页面显示
+	//hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	m_sidebar = gtk_stack_sidebar_new();
+	//gtk_box_pack_start(GTK_BOX(hbox), sidebar, FALSE, FALSE, 0);
+	
+	stack = gtk_stack_new();
+	gtk_stack_set_transition_type(GTK_STACK(stack),
+	GTK_STACK_TRANSITION_TYPE_SLIDE_UP);//切换的效果是往上的
+	gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(m_sidebar), GTK_STACK(stack));
 
-    gtk_widget_show_all(m_notebook);
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), num);
+	//gtk_box_pack_start(GTK_BOX(hbox), gtk_separator_new(GTK_ORIENTATION_VERTICAL), FALSE,FALSE, 0);
+	//gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);
 
-    return 0;
+	GtkWidget *widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);
+	gtk_image_set_pixel_size(GTK_IMAGE(widget), 150);
+	gtk_stack_add_named(GTK_STACK(stack), widget, "test");
+	gtk_container_child_set(GTK_CONTAINER(stack), widget, "title", "test", NULL);
+
+	return 0;
 }
+//创建本地shell页面
 gint page_shell_create()
 {
     char *tmp;
@@ -286,18 +291,18 @@ gint page_shell_create()
 
     // tab = hbox + label + button
     pg->type = PG_TYPE_SHELL;
-    pg->head.box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    // pg->head.image = img_from_name(ICON_SHELL);
-    // gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
     pg->head.label = gtk_label_new("Shell");
+    
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.label, FALSE, FALSE, 10);
     pg->head.button = gtk_button_new();
+    
     gtk_button_set_relief(GTK_BUTTON(pg->head.button), GTK_RELIEF_NONE);
     tmp = get_res_path(ICON_CLOSE);
     gtk_button_set_image(GTK_BUTTON(pg->head.button), gtk_image_new_from_file(tmp));
     free(tmp);
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.button, FALSE, FALSE, 0);
     g_signal_connect(G_OBJECT(pg->head.button), "clicked", G_CALLBACK(on_close_clicked), pg);
+    
     gtk_widget_show_all(pg->head.box);
 
     // pty + vte
@@ -325,7 +330,7 @@ gint page_shell_create()
 
     return num;
 }
-
+//创建新的ssh页面
 gint page_ssh_create(cfg_t *cfg)
 {
     char *tmp;
@@ -394,13 +399,13 @@ gint page_ssh_create(cfg_t *cfg)
 
     return num;
 }
-/*
+
 //定义一个main程序获取sidebar组件的程序
 GtkWidget *page_get_sidebar()
 {
 	return m_sidebar;
 }
-*/
+
 //定义一个main程序获取notebook组件的程序
 GtkWidget *page_get_notebook()
 {

@@ -67,38 +67,25 @@ static int window_create_show()
 		 */
 	gtk_widget_set_size_request(m_window,970,600);//设置窗口的初始大小，黄金比例1：1.618
     
-	//创建窗口容器vbox，用来显示配置信息,配置为VERTICAL，纵向显示组件
-	//vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-
-		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);//横向显示窗口,显示侧边栏
-		//gtk_container_add(GTK_CONTAINER(m_window), hbox);	
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);//横向显示窗口,显示侧边栏
 		//横向第一个窗口,sidebar
-		    //定义侧边栏
-		    //sidebar = page_get_sidebar();
-			//侧边栏hbox里面显示sidebar
-			//gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);
-			//定义stack,栈，用于定义sidebar的内容
-			//stack = gtk_stack_new();
-			//gtk_stack_set_transition_type(GTK_STACK(stack),GTK_STACK_TRANSITION_TYPE_SLIDE_UP);
-			//将sidebar和stack连接起来
-			//gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));
-			//侧边栏hbox里面显示stack的内容
-			//gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);
-	
+		//定义侧边栏
+			//sidebar = page_get_sidebar();
+			sidebar = gtk_stack_sidebar_new();
+			//gtk_window_set_default_size(sidebar,50,600);
+			gtk_widget_set_size_request(sidebar,150,600);
+			gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);
+
 		//横向第二个窗口 notebook
 			notebook = page_get_notebook();
-			//定义notebook初始页面的名称
-			//GtkWidget *label = gtk_label_new("Page one");
-			//gtk_notebook_append_page(GTK_NOTEBOOK(notebook), hbox, label);
-			//gtk_stack_add_named(GTK_STACK(stack), pg->body , "sick");
-			//gtk_container_child_set(GTK_CONTAINER(stack), notebook , "title","sick", NULL);
+			//gtk_window_set_default_size(notebook,750,600);
+			gtk_widget_set_size_request(notebook,750,600);
 			gtk_box_pack_start(GTK_BOX(hbox), notebook, TRUE, TRUE, 1);
-	
-	//gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);//显示vbox和hbox
-    gtk_container_add(GTK_CONTAINER(m_window), hbox);
+
+	gtk_container_add(GTK_CONTAINER(m_window), hbox);
 	
 	gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
-    g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
+    	g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
 	g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);//定义点击关闭退出
 
 	gtk_widget_show_all(m_window);
@@ -154,9 +141,6 @@ int main(int argc, char **argv)
 
     // 创建主窗口
     window_create_show();
-
-    // 创建DEBUG_WINDOW，暂时关闭
-    //debug_create_show(m_window);
 
     gtk_main();
 
