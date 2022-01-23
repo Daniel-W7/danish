@@ -52,45 +52,55 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
 //创建窗口
 static int window_create_show()
 {
-    //char *tmp;
 
-    // window,初始化定义窗口
-    m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(m_window), "danish");//设置窗口名称
-	//gtk_window_maximize(GTK_WINDOW(m_window));//设置全屏显示,注释掉似乎也不影响显示
-	gtk_window_set_position(GTK_WINDOW(m_window),GTK_WIN_POS_NONE);//设置窗口在显示器中的位置为居中
+	//char *tmp;
+
+	// window,初始化定义窗口
+	m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	//设置窗口名称
+	gtk_window_set_title(GTK_WINDOW(m_window), "danish");
+	//设置全屏显示,注释掉似乎也不影响显示
+	//gtk_window_maximize(GTK_WINDOW(m_window));
+	//设置窗口在显示器中的位置为任意
+	gtk_window_set_position(GTK_WINDOW(m_window),GTK_WIN_POS_NONE);
 		/*
 		   	GTK_WIN_POS_NONE： 不固定
 			GTK_WIN_POS_CENTER: 居中
 			GTK_WIN_POS_MOUSE: 出现在鼠标位置
 			GTK_WIN_POS_CENTER_ALWAYS: 窗口总是居中
 		 */
-	gtk_widget_set_size_request(m_window,970,600);//设置窗口的初始大小，黄金比例1：1.618
+	//设置窗口的初始大小，黄金比例1：1.618
+	gtk_widget_set_size_request(m_window,970,600);
     
-	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);//横向显示窗口,显示侧边栏
+	//创建窗口容器vbox，用来显示配置信息,配置为VERTICAL，纵向显示组件
+	//vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	//横向显示窗口,显示侧边栏
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+		//测试窗口
+		widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);
+                gtk_image_set_pixel_size(GTK_IMAGE(widget), 100);
+		gtk_container_add(GTK_CONTAINER(hbox), widget);
+	
 		//横向第一个窗口,sidebar
-		//定义侧边栏
-			//sidebar = page_get_sidebar();
-			sidebar = gtk_stack_sidebar_new();
-			//gtk_window_set_default_size(sidebar,50,600);
-			gtk_widget_set_size_request(sidebar,150,600);
-			gtk_box_pack_start(GTK_BOX(hbox), sidebar, TRUE, TRUE, 0);
+	        //sidebar = page_get_notebook(0);
+		//gtk_widget_set_size_request(sidebar,800,600);
+		//gtk_container_add(GTK_CONTAINER(hbox),sidebar);
 
 		//横向第二个窗口 notebook
-			notebook = page_get_notebook();
-			//gtk_window_set_default_size(notebook,750,600);
-			gtk_widget_set_size_request(notebook,750,600);
-			gtk_box_pack_start(GTK_BOX(hbox), notebook, TRUE, TRUE, 1);
+		notebook = page_get_notebook();
+		//gtk_widget_set_size_request(notebook,750,600);
+            	gtk_container_add(GTK_CONTAINER(hbox),notebook);
 
 	gtk_container_add(GTK_CONTAINER(m_window), hbox);
-	
+
 	gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
-    	g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
-	g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);//定义点击关闭退出
+	g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
+    	//定义退出按钮
+	g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
 	gtk_widget_show_all(m_window);
-
-    return 0;
+	//gtk_main();
+	return 0;
 }
 
 const char *HOME = NULL;
@@ -141,6 +151,9 @@ int main(int argc, char **argv)
 
     // 创建主窗口
     window_create_show();
+
+    // 创建DEBUG_WINDOW，暂时关闭
+    //debug_create_show(m_window);
 
     gtk_main();
 
