@@ -27,19 +27,14 @@ GtkWidget *hbox;//横向窗口
 GtkWidget *vbox;//纵向窗口
 GtkWidget *sidebar;
 GtkWidget *stack;
-GtkWidget *widget;
 GtkWidget *notebook;
 static int m_auto_focus = 1;
+//获取打开的标签数
 int page_get_count()
 {
     return gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook));
 }
-
-int page_get_select_num()
-{
-    return gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
-}
-
+//设置当前选择的页面的标签
 void page_set_select_num(int i)
 {
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), i);
@@ -52,7 +47,9 @@ void page_set_auto_focus(int b)
 //定义关闭页面
 int page_close(int n)
 {
+    //获取打开的所有的标签
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), n);
+    //获取打开页面的类型
     pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
     if (pg->type == PG_TYPE_SSH) {
         kill(pg->ssh.child, SIGKILL);
@@ -63,10 +60,17 @@ int page_close(int n)
 
     return 0;
 }
+/*
 //定义关闭选中页面
+int page_get_select_num()
+{
+    return gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+}
+*/
 int page_close_select()
 {
-    return page_close(page_get_select_num());
+    int page_num = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+    return page_close(page_num);
 }
 
 int page_set_title(int i, char *str)
@@ -111,7 +115,7 @@ static void *work(void *p)
         break;//直接退出
     }
 	//推出后关闭所有的索引和notebook的显示
-    int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);//笔记本控件，能够让用户标签式地切换多个界面。
+    int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
     gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), num);
 
     return NULL;
@@ -182,7 +186,7 @@ gint page_ssh_create(cfg_t *cfg)
     pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
     bzero(pg, sizeof(pg_t));
 
-    // cfg
+    // cfg,配置文件
     memcpy(&pg->ssh.cfg, cfg, sizeof(cfg_t));
 
     // tab = hbox + label + button
@@ -257,20 +261,25 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
     return FALSE;
 }
 //创建窗口
-int window_create(GtkWidget *hub_page)
+int window_create(GtkWidget *sitetree)
 {
 
-    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
+	pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
 
-    //定义notebook显示的label
+	//定义notebook显示的label
         pg->head.label = gtk_label_new("Sessions");
 
-     // body,定义页面主要内容
-	    pg->body = hub_page;
+	// body,定义页面主要内容
+	pg->body = sitetree;
 
-    //将body里面的树状站点信息放置到label中
-	    //const char *label = pg->body;
-
+	// notebook,创建notebook
+	notebook = gtk_notebook_new();
+	//定义切换notebook页面的操作
+	g_signal_connect_after(G_OBJECT(notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
+	    
+	//将body里面的内容连接到Sessions label下面
+	//gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.label);
+        
 	// window,初始化定义窗口
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	//设置窗口名称
@@ -285,41 +294,22 @@ int window_create(GtkWidget *hub_page)
 		 */
 	//设置窗口的初始大小，黄金比例1：1.618
 	gtk_widget_set_size_request(window,970,600);
-    
+
 	//创建窗口容器vbox，用来显示配置信息,配置为VERTICAL，纵向显示组件
 	//vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	//横向显示窗口,显示侧边栏
-	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-   		/* 
-		//测试窗口
-		widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);
-        	gtk_image_set_pixel_size(GTK_IMAGE(widget), 100);
-		gtk_container_add(GTK_CONTAINER(hbox), widget);
-		*/
-	    // notebook,创建notebook
-	    notebook = gtk_notebook_new();
-	    //定义切换notebook页面的操作
-	    g_signal_connect_after(G_OBJECT(notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
-	    
-	    //将body里面的内容连接到Sessions label下面
-	    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.label);
-	/*
-        // page,定义sidebar,显示内容
-        sidebar = gtk_stack_sidebar_new();
-        //定义stack,栈，用于定义sidebar的内容
-	    stack = gtk_stack_new(); 
-        //将sidebar和stack连接起来
-	    gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));
+    	//定义hbox，横向显示，左侧用于放置站点信息，右侧用于放置shell和ssh终端
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);   
         
-        //将notebook加入到stack中，并与label对应
-	    gtk_stack_add_named(GTK_STACK(stack), notebook, "label");
-	    */
-        gtk_container_add(GTK_CONTAINER(hbox), notebook);
- 
+        	//定义侧边栏站点树显示
+		gtk_container_add(GTK_CONTAINER(hbox), sitetree);
+        	//定义ssh连接notebook显示
+		gtk_container_add(GTK_CONTAINER(hbox), notebook);
+	
+	//将hbox添加到window里面，显示两个组件
 	gtk_container_add(GTK_CONTAINER(window), hbox);
-    	//gtk_container_add(GTK_CONTAINER(window), notebook);
-	//gtk_container_add(GTK_CONTAINER(window), vbox);
+
 	gtk_widget_set_events(window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
+
 	g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
     	//定义退出按钮
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK (gtk_main_quit), NULL);

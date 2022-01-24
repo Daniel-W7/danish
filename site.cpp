@@ -34,81 +34,81 @@ enum {
 // 激活tree节点,用于tree显示
 void on_treeview_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data) 
 {
-    GValue value = {0,};
+	GValue value = {0,};
 	//定义迭代，并将迭代定义为指向路径path
-    GtkTreeIter iter;
-    gtk_tree_model_get_iter(GTK_TREE_MODEL(m_treestore), &iter, path);
+	GtkTreeIter iter;
+	gtk_tree_model_get_iter(GTK_TREE_MODEL(m_treestore), &iter, path);
 	//初始化并定义value
-    gtk_tree_model_get_value(GTK_TREE_MODEL(m_treestore), &iter, COL_CFG,  &value);
+	gtk_tree_model_get_value(GTK_TREE_MODEL(m_treestore), &iter, COL_CFG,  &value);
 	//读取site.xml的文件信息
-    cfg_t *cfg = (cfg_t*) g_value_get_pointer(&value);
-    if (cfg) {
-        page_ssh_create(cfg);
-    }
-    // 如果为文件夹节点，则展开/收缩此节点
-    else {
-        if (gtk_tree_view_row_expanded(GTK_TREE_VIEW(m_treeview), path)) {
-            gtk_tree_view_collapse_row(GTK_TREE_VIEW(m_treeview), path);
-        }
-        else {
-            gtk_tree_view_expand_to_path(GTK_TREE_VIEW(m_treeview), path);
-        }
-    }
+	cfg_t *cfg = (cfg_t*) g_value_get_pointer(&value);
+	if (cfg) {
+		page_ssh_create(cfg);
+	}
+	// 如果为文件夹节点，则展开/收缩此节点
+	else {
+		if (gtk_tree_view_row_expanded(GTK_TREE_VIEW(m_treeview), path)) {
+			gtk_tree_view_collapse_row(GTK_TREE_VIEW(m_treeview), path);
+		}
+		else {
+			gtk_tree_view_expand_to_path(GTK_TREE_VIEW(m_treeview), path);
+		}
+	}
 }
 //站点设置
 int site_init()
 {
-    //初始化站点文件位置
-    m_sitefile = get_res_path(SITEFILE);
-    m_doc = new TiXmlDocument();
+	//初始化站点文件位置
+	m_sitefile = get_res_path(SITEFILE);
+	m_doc = new TiXmlDocument();
 
-    // main container，主界面
-    m_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    m_object = m_vbox;
-/*定义toolbar，暂时禁用
-    // toolbar
-    m_toolbar = gtk_toolbar_new();
-    gtk_toolbar_set_style(GTK_TOOLBAR(m_toolbar), GTK_TOOLBAR_BOTH);
-    gtk_box_pack_start(GTK_BOX(m_vbox), m_toolbar, FALSE, FALSE, 0);
-*/
-    // tree_store
-    m_treestore = gtk_tree_store_new(NUM_COLS, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_POINTER);
-    if (m_treestore == NULL) {
-        return -1;
-    }
+	// main container，主界面
+	m_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	m_object = m_vbox;
+	/*定义toolbar，暂时禁用
+	// toolbar
+	m_toolbar = gtk_toolbar_new();
+	gtk_toolbar_set_style(GTK_TOOLBAR(m_toolbar), GTK_TOOLBAR_BOTH);
+	gtk_box_pack_start(GTK_BOX(m_vbox), m_toolbar, FALSE, FALSE, 0);
+	 */
+	// tree_store
+	m_treestore = gtk_tree_store_new(NUM_COLS, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_POINTER);
+	if (m_treestore == NULL) {
+		return -1;
+	}
 
-    // tree_view
-    m_treeview = gtk_tree_view_new();
-    if (m_treeview == NULL) {
-        return -1;
-    }
-    gtk_tree_view_set_model(GTK_TREE_VIEW(m_treeview), GTK_TREE_MODEL(m_treestore));
-    //树节点，窗口显示配置
+	// tree_view
+	m_treeview = gtk_tree_view_new();
+	if (m_treeview == NULL) {
+		return -1;
+	}
+	gtk_tree_view_set_model(GTK_TREE_VIEW(m_treeview), GTK_TREE_MODEL(m_treestore));
+	//树节点，窗口显示配置
 	gtk_box_pack_start(GTK_BOX(m_vbox), m_treeview, TRUE, TRUE, 0);
 	//配置是否显示headers
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (m_treeview), FALSE);
+	gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (m_treeview), TRUE);
 	//配置树节点里面的站点可以双击打开
 	g_signal_connect(GTK_WIDGET(m_treeview), "row-activated", G_CALLBACK(on_treeview_row_activated), NULL);
-    //不影响功能，暂时禁用  
-    //GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(m_treeview));
-    //gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
-    //配置一个子tree的创建
-    GtkTreeViewColumn *col;
-    GtkCellRenderer *renderer;
+	//不影响功能，暂时禁用  
+	//GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(m_treeview));
+	//gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
+	//配置一个子tree的创建
+	GtkTreeViewColumn *col;
+	GtkCellRenderer *renderer;
 
-    col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Site List");
-    gtk_tree_view_append_column(GTK_TREE_VIEW(m_treeview), col);
+	col = gtk_tree_view_column_new();
+	gtk_tree_view_column_set_title(col, "Site List");
+	gtk_tree_view_append_column(GTK_TREE_VIEW(m_treeview), col);
 
-    renderer = gtk_cell_renderer_pixbuf_new();
-    gtk_tree_view_column_pack_start(col, renderer, FALSE);
-    gtk_tree_view_column_add_attribute(col, renderer, "pixbuf", COL_ICON);
+	renderer = gtk_cell_renderer_pixbuf_new();
+	gtk_tree_view_column_pack_start(col, renderer, FALSE);
+	gtk_tree_view_column_add_attribute(col, renderer, "pixbuf", COL_ICON);
 
-    renderer = gtk_cell_renderer_text_new();
-    gtk_tree_view_column_pack_start(col, renderer, FALSE);
-    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_NAME);
+	renderer = gtk_cell_renderer_text_new();
+	gtk_tree_view_column_pack_start(col, renderer, FALSE);
+	gtk_tree_view_column_add_attribute(col, renderer, "text", COL_NAME);
 
-    return 0;
+	return 0;
 }
 //删除站点文件，释放内存空间
 void site_term()

@@ -64,12 +64,12 @@ int main(int argc, char **argv)
 
     // 创建tab容器（使用site页作为hub_page)
     //读取site的配置信息
-	GtkWidget *hub = site_get_object();
+	GtkWidget *sitetree = site_get_object();
 	//初始化页面
-    gtk_widget_grab_focus(hub);
+    //gtk_widget_grab_focus(sitetree);
 
     // 创建主窗口
-    window_create(hub);
+    window_create(sitetree);
 
     // 创建DEBUG_WINDOW，暂时关闭
     //debug_create_show(window);
