@@ -1,224 +1,77 @@
 #define _XOPEN_SOURCE
 #define _GNU_SOURCE
-/*定义页面显示内容，以及ssh连接，tty，pty配置内容*/
+#include <signal.h>
 #include <fcntl.h>
-#include <pthread.h>
 
 #include <unistd.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <sys/types.h>//里面包含pid_t等函数
+#include <sys/types.h>
 #include <sys/select.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 
+#include "config.h"
 #include "util.h"
 
+#include "shell.h"
 #include "page.h"
-
-#define SSH     "/usr/bin/ssh"
-#define SHELL   "/bin/bash"
-
+#include "site.h"
+//gtk初始化组件
 //添加gtk组件
 
-static GtkWidget *m_notebook;
-static GtkWidget *m_sidebar;
-static GtkWidget *stack;
+GtkWidget *window;
+GtkWidget *hbox;//横向窗口
+GtkWidget *vbox;//纵向窗口
+GtkWidget *sidebar;
+GtkWidget *stack;
+GtkWidget *widget;
+GtkWidget *notebook;
 static int m_auto_focus = 1;
-//定义pg->type == PG_TYPE_SSH的情况
-static void *wait_ssh_child(void *p)
+int page_get_count()
 {
-    //pg_t为page.h中定义的结构体
-    pg_t *pg = (pg_t*) p;
-    //type为pt_g内部定义的枚举变量，包含PG_TYPE_HUB,PG_TYPE_SSH,PG_TYPE_SHELL
+    return gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook));
+}
+
+int page_get_select_num()
+{
+    return gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+}
+
+void page_set_select_num(int i)
+{
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), i);
+}
+
+void page_set_auto_focus(int b)
+{
+    m_auto_focus = (b!=0);
+}
+//定义关闭页面
+int page_close(int n)
+{
+    GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), n);
+    pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
     if (pg->type == PG_TYPE_SSH) {
-        waitpid(pg->ssh.child, NULL, 0);
-        pg->ssh.need_stop = 1;
+        kill(pg->ssh.child, SIGKILL);
+    }
+    if (pg->type == PG_TYPE_SHELL) {
+        kill(pg->shell.child, SIGKILL);
     }
 
-    return NULL;
+    return 0;
 }
-//打开shell
-static void run_shell(pg_t *pg)
+//定义关闭选中页面
+int page_close_select()
 {
-    //如果pg为空或者type不等于PG_TYPE_SHELL，返回空
-    if (NULL == pg || pg->type != PG_TYPE_SHELL) {
-        return;
-    }
-
-    pg->shell.child = fork();//定义了一个shell的子进程，如果fork返回0，说明在shell子进程中
-    if (pg->shell.child == 0) {
-        vte_pty_child_setup(pg->shell.pty);
-        execlp(SHELL, SHELL, NULL);//excute shell
-    }
-    waitpid(pg->shell.child, NULL, 0);//等待子进程消失
-
-    //vte_pty_close(pg->shell.pty); //关闭vtepty终端
+    return page_close(page_get_select_num());
 }
-//打开并建立ssh连接
-static void run_ssh(pg_t *pg)
+
+int page_set_title(int i, char *str)
 {
-    //如果pg为空或者type不等于PG_TYPE_SSH，返回空
-    if (NULL == pg || pg->type != PG_TYPE_SSH) {
-        return;
-    }
-
-    /* 
-     *输出输入流程
-     * [output flow-chart]
-     * vte << vte_master_fd << vte_slave_fd << this_app << mine_master_fd << mine_slave_fd << ssh
-     * 
-     * [intput flow-chart]
-     * vte >> vte_master_fd >> vte_slave_fd >> this_app >> mine_master_fd >> mine_slave_fd >> ssh
-     */
-    int vte_master_fd = vte_pty_get_fd(pg->ssh.pty);
-    int vte_slave_fd = open(ptsname(vte_master_fd), O_RDWR);
-
-    // raw 模式
-    struct termios tio;//termios tty调用接口
-    tcgetattr(vte_slave_fd, &tio);//tcgetattr函数用于获取与终端相关的参数。参数fd为终端的文件描述符，返回的结果保存在termios结构体中
-    cfmakeraw(&tio);//初始化 termios结构体,将他的一些成员初始化为默认的设置
-    tcsetattr(vte_slave_fd, TCSADRAIN, &tio);//tcsetattr函数用于设置终端的相关参数。参数fd为打开的终端文件描述符，参数optional_actions用于控制修改起作用的时间，而结构体termios_p中保存了要修改的参数。
-
-    // open mine_master_fd
-    int mine_master_fd = getpt();
-    if (mine_master_fd < 0) {
-        return;
-    }
-    int flags = fcntl(mine_master_fd, F_GETFL, 0);//F_GETFL 取得文件描述词状态旗标, 此旗标为open()的参数flags.，返回值：成功则返回0, 若有错误则返回-1, 错误原因存于errno.
-    if (flags < 0) {
-        return;
-    }
-    flags &= ~O_NONBLOCK; // blocking it，阻塞进程
-    flags |= FD_CLOEXEC; // close on exec
-    if (fcntl(mine_master_fd, F_SETFL, flags) < 0) {
-        return;
-    }
-
-    // grant and unlock slave
-    char *slave = ptsname(mine_master_fd);//ptsname() -- 获得从伪终端名(slave pseudo-terminal)
-    if (grantpt(mine_master_fd) != 0 ||unlockpt(mine_master_fd) != 0) {
-        return;
-    }
-
-    pg->ssh.child = fork();//定义了一个ssh的子进程，如果fork返回0，说明在ssh子进程中
-    // child for exec
-    if (pg->ssh.child == 0) {
-        setenv("TERM", "xterm", 1);//setenv()用来改变或增加环境变量的内容。参数为环境变量名称字符串，变量内容，参数overwrite用来决定是否要改变已存在的环境变量。
-        int mine_slave_fd = open(slave, O_RDWR);   // used by sshopen函数用来打开一个设备，他返回的是一个整型变量，如果这个值等于-1，说明打开文件出现错误，如果为大于0的值，那么这个值代表的就是文件描述符
-        setsid();//重新创建一个session
-        setpgid(0, 0);//将pid进程的进程组ID设置成pgid，创建一个新进程组或加入一个已存在的进程组
-        ioctl(mine_slave_fd, TIOCSCTTY, mine_slave_fd);//设备驱动程序中对设备的I/O通道进行管理的函数
-
-        close(0);//close ()关闭文件，挂壁open()打开的文件
-        close(1);
-        close(2);
-        dup2(mine_slave_fd, 0);//用来复制参数oldfd 所指的文件描述词, 并将它拷贝至参数newfd 后一块返回
-        dup2(mine_slave_fd, 1);
-        dup2(mine_slave_fd, 2);
-
-        //printf("\n");
-        printf(PACKAGE" v"VERSION"\n");
-        printf(COPYRIGHT"\n");
-        printf("\n");
-        printf("Connecting ... %s:%s\n", pg->ssh.cfg.host, pg->ssh.cfg.port);
-        //printf("\n");
-
-        char host[512];
-        memset(host, 0x00, sizeof(host));//在一段内存块中填充某个给定的值
-        sprintf(host, "%s@%s", pg->ssh.cfg.user, pg->ssh.cfg.host);//将配置文件里的用户名和host，以类似root@127.0.0.1的方式输出到host中
-        execlp(SSH, SSH, host, "-p", pg->ssh.cfg.port, NULL);//执行系统命令，进行ssh连接
-    }
-
-    // thread for waitpid
-    pthread_t tid;//声明线程ID
-    pthread_create(&tid, NULL, wait_ssh_child, pg);//创建一个线程
-    
-    // for expect
-    int already_login = 0;
-    struct winsize old_size = {0,0,0,0};
-    int row = 0;
-    int col = 0;
-    fd_set set;
-    struct timeval tv = {0, 100};
-    //若是ssh没有关闭，则执行下面的循环
-    while (pg->ssh.need_stop == 0) {
-        // vte_pty的尺寸变化时，修改mine_master_fd,以便它去通知ssh
-        if (vte_pty_get_size(pg->ssh.pty, &row, &col, NULL) == TRUE) {
-            if (row != old_size.ws_row ||
-                col != old_size.ws_col) {
-                old_size.ws_row = (short) row;
-                old_size.ws_col = (short) col;
-                ioctl(mine_master_fd, TIOCSWINSZ, &old_size);
-            }
-        }
-
-        //
-        // 打印ssh返回的输出，并判断是否应该执行自动输入
-        //
-        //vte >> vte_master_fd >> vte_slave_fd >>
-        // this_app >> mine_master_fd >> mine_slave_fd >> ssh
-        FD_ZERO(&set);//将指定的文件描述符集清空
-        FD_SET(mine_master_fd, &set);//用于在文件描述符集合中增加一个新的文件描述符。
-        if (select(mine_master_fd+1, &set, NULL, NULL, &tv) > 0) {
-            char buf[256];
-            int len = read(mine_master_fd, buf, sizeof(buf));//读文件函数(由已打开的文件读取数据)
-            if (len > 0) {
-                write(vte_slave_fd, buf, len);//write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
-
-                // 如果当前没有登录成功, 自动输入密码
-                if (already_login == 0 && str_is_endwith(buf, len, SSH_PASSWORD)) {
-                    already_login = 1;
-                    write(mine_master_fd, pg->ssh.cfg.pass, strlen(pg->ssh.cfg.pass));
-                    write(mine_master_fd, "\n", 1);
-                }
-            }
-        }
-
-        //
-        // 读取vte_pty的用户输入，并发送到给ssh
-        //vte >> vte_master_fd >> vte_slave_fd >> this_app >> mine_master_fd >> mine_slave_fd >> ssh
-        // vte_slave_fd -> mine_master_fd
-        FD_ZERO(&set);//将指定的文件描述符集清空
-        FD_SET(vte_slave_fd, &set);//用于在文件描述符集合中增加一个新的文件描述符。
-        if (select(vte_slave_fd+1, &set, NULL, NULL, &tv) > 0) {
-            char buf[256];
-            int len = read(vte_slave_fd, buf, sizeof(buf));//读文件函数(由已打开的文件读取数据)
-            if (len > 0) {
-                write(mine_master_fd, buf, len);//write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
-            }
-        }
-
-        usleep(1000);//usleep功能把进程挂起一段时间， 单位是微秒（百万分之一秒）；
-    }
-
-    //vte_pty_close(pg->ssh.pty);//命令已过期，暂时禁用
-}
-//定义主进程，根据type的值打开shell和ssh
-static void *work(void *p)
-{
-    pg_t *pg = (pg_t*) p;
-    //type枚举
-    switch (pg->type) {
-    case PG_TYPE_SHELL:
-        run_shell(pg); // 打开shell。block here;
-        break;
-
-    case PG_TYPE_SSH:  
-        run_ssh(pg); // 打开ssh，block here;
-        break;
-
-    default:
-        break;//直接退出
-    }
-	//推出后关闭所有的索引和notebook的显示
-    int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);//笔记本控件，能够让用户标签式地切换多个界面。
-    gtk_notebook_remove_page(GTK_NOTEBOOK(m_notebook), num);
-
-    return NULL;
+    return -1;
 }
 // 标签选中切换时
 // 1、修改标签颜色,暂时删除
@@ -235,51 +88,33 @@ static void on_notebook_switch(GtkNotebook *notebook, GtkWidget *page,
 static void on_close_clicked(GtkWidget *widget, gpointer user_data)
 {
     pg_t *pg = (pg_t*) user_data;
-    int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);
+    int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
     page_close(num);
 }
-//初始化页面显示
-int page_init(GtkWidget *hub_page) 
+//定义主进程，根据type的值打开shell和ssh
+static void *work(void *p)
 {
-	pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
-	
-	// notebook
-	m_notebook = gtk_notebook_new();
-		//允许切换notebook页面
-		g_signal_connect_after(G_OBJECT(m_notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
-		//定义notebook显示的label
-        	pg->head.label = gtk_label_new("Sessions");
-	
-	// body,定义页面主要内容
-	pg->body = hub_page;
-	g_object_set_data(G_OBJECT(pg->body), "pg", pg);
-	
-	// page,定义notebook初始页面显示
-    	gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.label);
-    	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
+    pg_t *pg = (pg_t*) p;
+    //type枚举
+    switch (pg->type) {
+    case PG_TYPE_SHELL:
+        // 打开shell。block here;
+        run_shell(pg); 
+        break;
 
-	gtk_widget_show_all(m_notebook);
-    	gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), num);
-	
-	// page,定义sidebar初始页面显示
-	//hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	m_sidebar = gtk_stack_sidebar_new();
-	//gtk_box_pack_start(GTK_BOX(hbox), sidebar, FALSE, FALSE, 0);
-	
-	stack = gtk_stack_new();
-	gtk_stack_set_transition_type(GTK_STACK(stack),
-	GTK_STACK_TRANSITION_TYPE_SLIDE_UP);//切换的效果是往上的
-	gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(m_sidebar), GTK_STACK(stack));
+    case PG_TYPE_SSH:  
+        // 打开ssh，block here;
+        run_ssh(pg); 
+        break;
 
-	//gtk_box_pack_start(GTK_BOX(hbox), gtk_separator_new(GTK_ORIENTATION_VERTICAL), FALSE,FALSE, 0);
-	//gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);
+    default:
+        break;//直接退出
+    }
+	//推出后关闭所有的索引和notebook的显示
+    int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);//笔记本控件，能够让用户标签式地切换多个界面。
+    gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), num);
 
-	GtkWidget *widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);
-	gtk_image_set_pixel_size(GTK_IMAGE(widget), 150);
-	gtk_stack_add_named(GTK_STACK(stack), widget, "test");
-	gtk_container_child_set(GTK_CONTAINER(stack), widget, "title", "test", NULL);
-
-	return 0;
+    return NULL;
 }
 //创建本地shell页面
 gint page_shell_create()
@@ -319,11 +154,11 @@ gint page_shell_create()
     //g_signal_connect(G_OBJECT(pg->shell.vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
 
     // page
-    gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
-    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
+    gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
+    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
 
-    gtk_widget_show_all(m_notebook);
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), num);
+    gtk_widget_show_all(notebook);
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), num);
 
     pthread_t tid;
     pthread_create(&tid, NULL, work, pg);
@@ -386,11 +221,11 @@ gint page_ssh_create(cfg_t *cfg)
     //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
 
     // page
-    gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
-    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(m_notebook), pg->body, TRUE);
+    gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
+    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
 
-    gtk_widget_show_all(m_notebook);
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), num);
+    gtk_widget_show_all(notebook);
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), num);
 
     pthread_t tid;
     pthread_create(&tid, NULL, work, pg);
@@ -399,60 +234,97 @@ gint page_ssh_create(cfg_t *cfg)
 
     return num;
 }
+//定义窗口打开关闭移动的操作
+static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+    GdkEventKey *key = (GdkEventKey*) event;
 
-//定义一个main程序获取sidebar组件的程序
-GtkWidget *page_get_sidebar()
-{
-	return m_sidebar;
-}
+    if ((key->state & GDK_CONTROL_MASK) &&
+        (key->state & GDK_SHIFT_MASK)) {
 
-//定义一个main程序获取notebook组件的程序
-GtkWidget *page_get_notebook()
-{
-    return m_notebook;
-}
+        // 关闭当前窗口
+        if (key->keyval == GDK_KEY_W) {
+            page_close_select();
+            return TRUE;
+        }
 
-int page_get_count()
-{
-    return gtk_notebook_get_n_pages(GTK_NOTEBOOK(m_notebook));
-}
-
-int page_get_select_num()
-{
-    return gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
-}
-
-void page_set_select_num(int i)
-{
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(m_notebook), i);
-}
-
-void page_set_auto_focus(int b)
-{
-    m_auto_focus = (b!=0);
-}
-//定义关闭页面
-int page_close(int n)
-{
-    GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), n);
-    pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
-    if (pg->type == PG_TYPE_SSH) {
-        kill(pg->ssh.child, SIGKILL);
+        // 打开一个本地窗口
+        if (key->keyval == GDK_KEY_T) {
+            page_shell_create();
+            return TRUE;
+        }
     }
-    if (pg->type == PG_TYPE_SHELL) {
-        kill(pg->shell.child, SIGKILL);
-    }
-
-    return 0;
+    return FALSE;
 }
-//定义关闭选中页面
-int page_close_select()
+//创建窗口
+int window_create(GtkWidget *hub_page)
 {
-    return page_close(page_get_select_num());
-}
 
-int page_set_title(int i, char *str)
-{
-    return -1;
-}
+    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
 
+    //定义notebook显示的label
+        pg->head.label = gtk_label_new("Sessions");
+
+     // body,定义页面主要内容
+	    pg->body = hub_page;
+
+    //将body里面的树状站点信息放置到label中
+	    //const char *label = pg->body;
+
+	// window,初始化定义窗口
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	//设置窗口名称
+	gtk_window_set_title(GTK_WINDOW(window), "danish");
+	//设置窗口在显示器中的位置为任意
+	gtk_window_set_position(GTK_WINDOW(window),GTK_WIN_POS_NONE);
+		/*
+		   	GTK_WIN_POS_NONE： 不固定
+			GTK_WIN_POS_CENTER: 居中
+			GTK_WIN_POS_MOUSE: 出现在鼠标位置
+			GTK_WIN_POS_CENTER_ALWAYS: 窗口总是居中
+		 */
+	//设置窗口的初始大小，黄金比例1：1.618
+	gtk_widget_set_size_request(window,970,600);
+    
+	//创建窗口容器vbox，用来显示配置信息,配置为VERTICAL，纵向显示组件
+	//vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	//横向显示窗口,显示侧边栏
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+   		/* 
+		//测试窗口
+		widget = gtk_image_new_from_icon_name("face-angry", GTK_ICON_SIZE_MENU);
+        	gtk_image_set_pixel_size(GTK_IMAGE(widget), 100);
+		gtk_container_add(GTK_CONTAINER(hbox), widget);
+		*/
+	    // notebook,创建notebook
+	    notebook = gtk_notebook_new();
+	    //定义切换notebook页面的操作
+	    g_signal_connect_after(G_OBJECT(notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
+	    
+	    //将body里面的内容连接到Sessions label下面
+	    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.label);
+	/*
+        // page,定义sidebar,显示内容
+        sidebar = gtk_stack_sidebar_new();
+        //定义stack,栈，用于定义sidebar的内容
+	    stack = gtk_stack_new(); 
+        //将sidebar和stack连接起来
+	    gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));
+        
+        //将notebook加入到stack中，并与label对应
+	    gtk_stack_add_named(GTK_STACK(stack), notebook, "label");
+	    */
+        gtk_container_add(GTK_CONTAINER(hbox), notebook);
+ 
+	gtk_container_add(GTK_CONTAINER(window), hbox);
+    	//gtk_container_add(GTK_CONTAINER(window), notebook);
+	//gtk_container_add(GTK_CONTAINER(window), vbox);
+	gtk_widget_set_events(window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
+	g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
+    	//定义退出按钮
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
+
+	gtk_widget_show_all(window);
+	//gtk_main();
+	return 0;
+}

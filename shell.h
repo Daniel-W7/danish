@@ -71,36 +71,9 @@ typedef struct {
     };
 
 } pg_t;
-
-int page_init(GtkWidget *widget);
-int page_term();
-
-GtkWidget *page_get_notebook();
-
-gint page_ssh_create(cfg_t *cfg);
-gint page_shell_create();
-
-int page_get_count();
-
-int page_get_select_num();
-void page_set_select_num(int i);
-
-int page_close(int n);
-int page_close_select();
-
-void page_set_auto_focus(int b);
-
-int page_foreach_send_char(char c);
-int page_foreach_send_string(char *str);
-int page_foreach_close();
-
-int page_send_string(int i, char *str);
-int page_send_string_crlf(int i, char *str);
-
-int page_set_title(int i, char *str);
-
-int window_create(GtkWidget *hub_page);
-
+void *wait_ssh_child(void *p);
+void run_shell(pg_t *pg);
+void run_ssh(pg_t *pg);
 #ifdef __cplusplus
 };
 #endif

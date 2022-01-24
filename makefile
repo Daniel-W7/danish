@@ -1,5 +1,5 @@
 TARGET = danish
-OBJS = main.o page.o site.opp
+OBJS = main.o page.o shell.o site.opp
 
 HEADER = config.h
 CFLAGS = -g -Wall -pipe $(shell pkg-config --cflags gtk+-3.0 vte-2.91 gthread-2.0 tinyxml)
@@ -13,7 +13,7 @@ $(TARGET): $(OBJS)
 	gcc -c $(CFLAGS) -o $@ $<
 
 %.opp: %.cpp %.h ${HEADER} makefile
-	gcc -c $(CXXFLAGS) -o $@ $<
+	g++ -c $(CXXFLAGS) -o $@ $<
 
 install: ${TARGET}
 	sudo desktop-file-install danish.desktop
