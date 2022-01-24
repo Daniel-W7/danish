@@ -40,10 +40,17 @@ GITee地址：https://gitee.com/daniel-w7/danish
 		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils
 
 3、编译方法
+	(1)手动编译
 	
 	cd danish
 	
 	make && make install
+
+	(2)自动编译
+	
+	cd danish
+	
+	./automk.sh
 
 4、配置文件路径
 
