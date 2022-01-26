@@ -248,8 +248,8 @@ static int x11_send_receive(LIBSSH2_CHANNEL *channel, int sock)
 /*
  * Main, more than inspired by ssh2.c by Bagder
  */
-//int main (int argc, char *argv[])
 int run_ssh(cfg_t *cfg)
+//int run_ssh(cfg_t *cfg)
 {
     unsigned long hostaddr;
     int sock = 0;
@@ -279,19 +279,14 @@ int run_ssh(cfg_t *cfg)
     timeval_out.tv_sec = 0;
     timeval_out.tv_usec = 10;
 
-
-    //char host[512];
-    //memset(hostaddr, 0x00, sizeof(host));//在一段内存块中填充某个给定的值
-    /*
-     sprintf(hostaddr, "%ld", pg->ssh.cfg.host);
-     sprintf(hostport, "%d", pg->ssh.cfg.port);
-     sprintf(username, "%s", pg->ssh.cfg.user);
-     sprintf(password, "%s", pg->ssh.cfg.pass);*/
-    hostaddr = atoi(cfg->host);
-    hostport = atoi(cfg->port);
-    username = cfg->user;
-    password = cfg->pass;
-    //sprintf(host, "%s@%s", pg->ssh.cfg.user, pg->ssh.cfg.host);//将配置文件里的用户名和host，以类似root@127.0.0.1的方式输出到host中
+    //hostaddr = inet_addr(atoi(cfg->host));
+    //hostport = atoi(cfg->port);
+    //username = cfg->user;
+    //password = cfg->pass;
+    hostaddr = inet_addr("127.0.0.1");
+    hostport = 22 ;
+    username = "test";
+    password = "test";
 
 /*
     if(argc > 3) {

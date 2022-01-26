@@ -72,9 +72,23 @@ int page_set_title(int i, char *str)
 {
     return -1;
 }
+static void *work(void *p)
+{   
+    pg_t *pg = (pg_t*) p;
+    cfg_t *cfg= (cfg_t*) cfg;
+    run_ssh(cfg);
+    
+    //gdk_threads_enter();
+    int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
+    gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), num);
+    //gdk_threads_leave();
+    
+    return NULL;
+}
 // 标签选中切换时
 // 1、修改标签颜色,暂时删除
 // 2、使标签内vte获得焦点
+/*
 static void on_notebook_switch(GtkNotebook *notebook, GtkWidget *page,
                                guint page_num, gpointer user_data)
 {
@@ -83,6 +97,7 @@ static void on_notebook_switch(GtkNotebook *notebook, GtkWidget *page,
         gtk_widget_grab_focus(page);
     }
 }
+*/
 //关闭对应page
 static void on_close_clicked(GtkWidget *widget, gpointer user_data)
 {
@@ -133,9 +148,9 @@ gint page_ssh_create(cfg_t *cfg)
     pg->body = vbox;
     g_object_set_data(G_OBJECT(pg->body), "pg", pg);
     // pty + vte
-    /*
     GtkWidget *vte = vte_terminal_new();
     pg->ssh.vte = vte;
+    
     //vte_terminal_set_emulation((VteTerminal*) vte, "xterm");//warning: implicit declaration of function ‘vte_terminal_set_emulation’
     gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
     //pg->ssh.pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接,vte2.91需要将vte_pty_new改为vte_pty_new_sync
@@ -144,7 +159,6 @@ gint page_ssh_create(cfg_t *cfg)
     //vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
     //vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
     //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
-*/
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
@@ -152,13 +166,14 @@ gint page_ssh_create(cfg_t *cfg)
     gtk_widget_show_all(notebook);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), num);
 
-    //pthread_t tid;
-    //pthread_create(&tid, NULL, work, pg);
+    pthread_t tid;
+    pthread_create(&tid, NULL, work, pg);
 
     //gtk_widget_grab_focus(vte);
 
     return num;
 }
+/*
 //定义窗口打开关闭移动的操作
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
@@ -172,16 +187,19 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             page_close_select();
             return TRUE;
         }
-/*
+
         // 打开一个本地窗口
         if (key->keyval == GDK_KEY_T) {
             page_shell_create();
             return TRUE;
         }
 */
+/*
     }
     return FALSE;
 }
+*/
+
 //创建窗口
 int window_create(GtkWidget *sitetree)
 {
@@ -197,7 +215,7 @@ int window_create(GtkWidget *sitetree)
 	// notebook,创建notebook
 	notebook = gtk_notebook_new();
 	//定义切换notebook页面的操作
-	g_signal_connect_after(G_OBJECT(notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
+	//g_signal_connect_after(G_OBJECT(notebook), "switch-page", G_CALLBACK(on_notebook_switch), NULL);
 	    
 	//将body里面的内容连接到Sessions label下面
 	//gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.label);
@@ -232,7 +250,7 @@ int window_create(GtkWidget *sitetree)
 
 	gtk_widget_set_events(window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
 
-	g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
+	//g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
     	//定义退出按钮
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
