@@ -13,10 +13,12 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
+#include <libssh2.h>
+
 #include "config.h"
 #include "util.h"
 #include "page.h"
-#include "shell.h"
+#include "ssh.h"
 #include "site.h"
 
 const char *HOME = NULL;

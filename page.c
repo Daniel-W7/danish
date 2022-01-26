@@ -16,7 +16,7 @@
 #include "config.h"
 #include "util.h"
 
-#include "shell.h"
+#include "ssh.h"
 #include "page.h"
 #include "site.h"
 //gtk初始化组件
@@ -51,12 +51,7 @@ int page_close(int n)
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), n);
     //获取打开页面的类型
     pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
-    if (pg->type == PG_TYPE_SSH) {
         kill(pg->ssh.child, SIGKILL);
-    }
-    if (pg->type == PG_TYPE_SHELL) {
-        kill(pg->shell.child, SIGKILL);
-    }
 
     return 0;
 }
@@ -95,80 +90,6 @@ static void on_close_clicked(GtkWidget *widget, gpointer user_data)
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
     page_close(num);
 }
-//定义主进程，根据type的值打开shell和ssh
-static void *work(void *p)
-{
-    pg_t *pg = (pg_t*) p;
-    //type枚举
-    switch (pg->type) {
-    case PG_TYPE_SHELL:
-        // 打开shell。block here;
-        run_shell(pg); 
-        break;
-
-    case PG_TYPE_SSH:  
-        // 打开ssh，block here;
-        run_ssh(pg); 
-        break;
-
-    default:
-        break;//直接退出
-    }
-	//推出后关闭所有的索引和notebook的显示
-    int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
-    gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), num);
-
-    return NULL;
-}
-//创建本地shell页面
-gint page_shell_create()
-{
-    char *tmp;
-
-    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
-    bzero(pg, sizeof(pg_t));
-
-    // tab = hbox + label + button
-    pg->type = PG_TYPE_SHELL;
-    pg->head.label = gtk_label_new("Shell");
-    
-    gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.label, FALSE, FALSE, 10);
-    pg->head.button = gtk_button_new();
-    
-    gtk_button_set_relief(GTK_BUTTON(pg->head.button), GTK_RELIEF_NONE);
-    tmp = get_res_path(ICON_CLOSE);
-    gtk_button_set_image(GTK_BUTTON(pg->head.button), gtk_image_new_from_file(tmp));
-    free(tmp);
-    gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.button, FALSE, FALSE, 0);
-    g_signal_connect(G_OBJECT(pg->head.button), "clicked", G_CALLBACK(on_close_clicked), pg);
-    
-    gtk_widget_show_all(pg->head.box);
-
-    // pty + vte
-    pg->body = vte_terminal_new();
-    pg->shell.vte = pg->body;
-
-    //pg->shell.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 未定义，暂时禁用
-    //vte_terminal_set_pty_object((VteTerminal*)pg->shell.vte, pg->ssh.pty);//warning: implicit declaration of function ‘vte_terminal_set_pty_object’
-
-    //vte_terminal_set_font_from_string((VteTerminal*)pg->shell.vte, "WenQuanYi Micro Hei Mono 11");//warning: implicit declaration of function ‘vte_terminal_set_font_from_string’
-    vte_terminal_set_scrollback_lines((VteTerminal*)pg->shell.vte, 1024);
-    vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->shell.vte, 1);
-    g_object_set_data(G_OBJECT(pg->shell.vte), "pg", pg);
-    //g_signal_connect(G_OBJECT(pg->shell.vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
-
-    // page
-    gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
-    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
-
-    gtk_widget_show_all(notebook);
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), num);
-
-    pthread_t tid;
-    pthread_create(&tid, NULL, work, pg);
-
-    return num;
-}
 //创建新的ssh页面
 gint page_ssh_create(cfg_t *cfg)
 {
@@ -189,15 +110,14 @@ gint page_ssh_create(cfg_t *cfg)
     // cfg,配置文件
     memcpy(&pg->ssh.cfg, cfg, sizeof(cfg_t));
 
-    // tab = hbox + label + button
-    pg->type = PG_TYPE_SSH;
+    // tab = hbox + label + button,定义新的窗口的头部信息
     pg->head.box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    pg->head.image = img_from_name(ICON_SITE);
-    gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
+    //gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
     char title[256];
     sprintf(title, "%s", cfg->name);
     pg->head.label = gtk_label_new(title);
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.label, FALSE, FALSE, 10);
+    //定义关闭按钮
     pg->head.button = gtk_button_new();
     gtk_button_set_relief(GTK_BUTTON(pg->head.button), GTK_RELIEF_NONE);
     tmp = get_res_path(ICON_CLOSE);
@@ -213,17 +133,18 @@ gint page_ssh_create(cfg_t *cfg)
     pg->body = vbox;
     g_object_set_data(G_OBJECT(pg->body), "pg", pg);
     // pty + vte
+    /*
     GtkWidget *vte = vte_terminal_new();
     pg->ssh.vte = vte;
     //vte_terminal_set_emulation((VteTerminal*) vte, "xterm");//warning: implicit declaration of function ‘vte_terminal_set_emulation’
     gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
-    pg->ssh.pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接,vte2.91需要将vte_pty_new改为vte_pty_new_sync
-    vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
-    vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);//定义pty终端缩放的大小
-    vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
+    //pg->ssh.pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接,vte2.91需要将vte_pty_new改为vte_pty_new_sync
+    //vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
+    //vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);//定义pty终端缩放的大小
+    //vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
     //vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
     //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
-
+*/
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
@@ -231,10 +152,10 @@ gint page_ssh_create(cfg_t *cfg)
     gtk_widget_show_all(notebook);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), num);
 
-    pthread_t tid;
-    pthread_create(&tid, NULL, work, pg);
+    //pthread_t tid;
+    //pthread_create(&tid, NULL, work, pg);
 
-    gtk_widget_grab_focus(vte);
+    //gtk_widget_grab_focus(vte);
 
     return num;
 }
@@ -251,12 +172,13 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             page_close_select();
             return TRUE;
         }
-
+/*
         // 打开一个本地窗口
         if (key->keyval == GDK_KEY_T) {
             page_shell_create();
             return TRUE;
         }
+*/
     }
     return FALSE;
 }

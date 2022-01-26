@@ -176,7 +176,7 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
         if (ele->Attribute("pass")) {
             strcpy(cfg->pass, ele->Attribute("pass"));
         }
-
+/*
         // cmd,进行程序执行
         TiXmlElement *btn;
         int i;
@@ -210,7 +210,7 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
                 }
             }
         }
-
+*/
         gtk_tree_store_set(m_treestore, &t, COL_CFG, cfg, -1);
 
         p = &t;
