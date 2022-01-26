@@ -37,6 +37,7 @@ typedef struct {
     enum {
         PG_TYPE_HUB,
         PG_TYPE_SSH,
+        PG_TYPE_SFTP,
         PG_TYPE_SHELL,
     } type;
 
@@ -74,6 +75,7 @@ typedef struct {
 void *wait_ssh_child(void *p);
 void run_shell(pg_t *pg);
 void run_ssh(pg_t *pg);
+void run_sftp(pg_t *pg);
 #ifdef __cplusplus
 };
 #endif

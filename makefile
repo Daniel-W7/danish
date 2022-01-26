@@ -4,7 +4,7 @@ OBJS = main.o page.o shell.o site.opp
 HEADER = config.h
 CFLAGS = -g -Wall -pipe $(shell pkg-config --cflags gtk+-3.0 vte-2.91 gthread-2.0 tinyxml)
 CXXFLAGS = -g -Wall -pipe $(shell pkg-config --cflags gtk+-3.0 vte-2.91 gthread-2.0 tinyxml)
-LDFLAGS += -lstdc++ $(shell pkg-config --libs gtk+-3.0 vte-2.91 gthread-2.0 tinyxml)
+LDFLAGS +=  -g -lstdc++ $(shell pkg-config --libs gtk+-3.0 vte-2.91 gthread-2.0 tinyxml)
 
 $(TARGET): $(OBJS)
 	gcc $^ $(LDFLAGS) -o $@
