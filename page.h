@@ -3,55 +3,26 @@
 
 #include <gtk/gtk.h>
 #include <vte/vte.h>
-#include "ssh.h"
-#include "config.h"
+#include <gdk/gdk.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+//登录显示的版权信息
 #define SSH_PASSWORD "password: "
+#define PACKAGE     "danish"
+#define VERSION     "0.02"
+#define AUTHOR      "Daniel Wang"
+#define EMAIL       "wanghaidi7@gmail.com"
+#define COPYRIGHT   "Copyright (c) 2021-2022 " AUTHOR " <" EMAIL "> "
 
-typedef struct {
-   
-    struct {
-        GtkWidget   *box;
-         GtkWidget   *image;
-        GtkWidget   *label;
-        GtkWidget   *button;
-    } head;
-
-    // body
-    GtkWidget   *body;
-
-    union {
-        struct {
-        } hub;
-        
-        struct {
-            GtkWidget *vte;
-            VtePty  *pty;
-            pid_t   child;
-            int     need_stop;
-            cfg_t   cfg;
-        } ssh;
-
-        struct {
-            GtkWidget *vte;
-            VtePty  *pty;
-            pid_t   child;
-        } shell;
-        
-    };
-
-} pg_t;
-
+//页面函数初始化
 int page_init(GtkWidget *widget);
 int page_term();
 
 GtkWidget *page_get_notebook();
 
-gint page_ssh_create(cfg_t *cfg);
+
 gint page_shell_create();
 
 int page_get_count();

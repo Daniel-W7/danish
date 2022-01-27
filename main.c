@@ -15,8 +15,6 @@
 
 #include <libssh2.h>
 
-#include "config.h"
-#include "util.h"
 #include "page.h"
 #include "ssh.h"
 #include "site.h"
