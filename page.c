@@ -74,11 +74,11 @@ int page_set_title(int i, char *str)
 }
 static void *work(void *p)
 {   
-    pg_t *pg = (pg_t*) p;
-    cfg_t *cfg= (cfg_t*) cfg;
-    run_ssh(cfg);
     
+    cfg_t *cfg= (cfg_t*) p;
+    run_ssh(cfg);
     //gdk_threads_enter();
+    pg_t *pg = (pg_t*) p;
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
     gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), num);
     //gdk_threads_leave();
@@ -113,12 +113,10 @@ gint page_ssh_create(cfg_t *cfg)
     if (NULL == cfg) {
         return -1;
     }
-
-    if (strlen(cfg->host) == 0 || strlen(cfg->port) == 0 ||
+    if (cfg->host == NULL || cfg->port == 0 ||
         strlen(cfg->user) == 0 || strlen(cfg->pass) == 0) {
         return -1;
     }
-
     pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
     bzero(pg, sizeof(pg_t));
 

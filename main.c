@@ -60,10 +60,11 @@ int main(int argc, char **argv)
 
     // 创建site页
     site_init();
-
+   
     // 装载site配置
     site_load();
 
+ 
     // 创建tab容器（使用site页作为hub_page)
     //读取site的配置信息
 	GtkWidget *sitetree = site_get_object();

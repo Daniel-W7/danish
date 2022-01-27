@@ -5,8 +5,8 @@
 
 typedef struct {
     char    name[256];
-    char    host[256];
-    char    port[256];
+    const char *host;
+    int    port;
     char    user[256];
     char    pass[256];
 

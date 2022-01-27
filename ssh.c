@@ -278,12 +278,14 @@ int run_ssh(cfg_t *cfg)
     struct timeval timeval_out;
     timeval_out.tv_sec = 0;
     timeval_out.tv_usec = 10;
-
-    //hostaddr = inet_addr(atoi(cfg->host));
-    //hostport = atoi(cfg->port);
-    //username = cfg->user;
-    //password = cfg->pass;
-    hostaddr = inet_addr("127.0.0.1");
+/*
+    hostaddr = inet_addr(cfg->host);
+    hostport =	cfg->port;
+    username = cfg->user;
+    password = cfg->pass;
+  */
+//const char *host= cfg->host;
+    hostaddr = inet_addr(cfg->host);
     hostport = 22 ;
     username = "test";
     password = "test";
