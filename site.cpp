@@ -7,9 +7,9 @@
 #include <vte/vte.h>
 #include <gdk/gdk.h>
 //#include "page.h"
-
 #include "site.h"
 #include "ssh.h"
+
 /*用于在通过站点文件获取站点信息*/
 //定义站点文件
 #define SITEFILE   "site.xml"

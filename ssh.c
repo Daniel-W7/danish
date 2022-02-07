@@ -26,10 +26,10 @@
 
 #include "site.h"
 #include "ssh.h"
+#include "page.h"
+//GtkWidget *notebook;
 
 #define _PATH_UNIX_X "/tmp/.X11-unix/X%d"
-
-//GtkWidget *notebook;
 
 /*
  * Chained list that contains channels and associated X11 socket for each X11
@@ -249,9 +249,13 @@ static int x11_send_receive(LIBSSH2_CHANNEL *channel, int sock)
 /*
  * Main, more than inspired by ssh2.c by Bagder
  */
-int run_ssh(cfg_t *cfg)
+int run_ssh(pg_t *pg)
 //int run_ssh(cfg_t *cfg)
 {
+    if (NULL == pg || pg->type != PG_TYPE_SSH) {
+        return -1;
+    }
+
     unsigned long hostaddr;
     int sock = 0;
     int rc = 0;
@@ -280,35 +284,34 @@ int run_ssh(cfg_t *cfg)
     timeval_out.tv_sec = 0;
     timeval_out.tv_usec = 10;
 /*
-    hostaddr = inet_addr(cfg->host);
-    hostport =	cfg->port;
-    username = cfg->user;
-    password = cfg->pass;
+    hostaddr = pg->ssh.cfg.host;
+    hostport = pg->ssh.cfg.port;
+    username = pg->ssh.cfg.user;
+    password = pg->ssh.cfg.pass;
   */
 //const char *host= cfg->host;
-    hostaddr = inet_addr(cfg->host);
+    //const char *host_p=cfg->host;
+    hostaddr = inet_addr("127.0.0.1");
     hostport = 22 ;
     username = "test";
     password = "test";
 
-/*
-    if(argc > 3) {
-        hostaddr = inet_addr(argv[1]);
+     pg->ssh.child = fork();
+    // child for exec
+    if (pg->ssh.child == 0) {
+        setenv("TERM", "xterm", 1);
+        //int mine_slave_fd = open(slave, O_RDWR);   // used by ssh
+        setsid();
+        setpgid(0, 0);
+        //ioctl(mine_slave_fd, TIOCSCTTY, mine_slave_fd);
 
-        username = argv[2];
-        password = argv[3];
-    }
-    else {
-        fprintf(stderr, "Usage: %s destination username password",
-                argv[0]);
-        return -1;
-    }
+        close(0);
+        close(1);
+        close(2);
+        //dup2(mine_slave_fd, 0);
+        //dup2(mine_slave_fd, 1);
+        //dup2(mine_slave_fd, 2);
 
-    if(argc > 4) {
-        set_debug_on = 1;
-        fprintf(stderr, "DEBUG is ON: %d\n", set_debug_on);
-    }
-*/
     rc = libssh2_init(0);
     if(rc != 0) {
         fprintf(stderr, "libssh2 initialization failed (%d)\n", rc);
@@ -486,90 +489,14 @@ int run_ssh(cfg_t *cfg)
         libssh2_channel_free(channel);
         channel = NULL;
     }
+    }
+     // thread for waitpid
+    //pthread_t tid;
+    //pthread_create(&tid, NULL, wait_ssh_child, pg);
+    
     _normal_mode();
 
     libssh2_exit();
 
     return 0;
-}
-static void *work(void *p)
-{   
-    
-    cfg_t *cfg= (cfg_t*) p;
-    run_ssh(cfg);
-    //gdk_threads_enter();
-  //  pg_t *pg = (pg_t*) p;
- //   int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
- //   gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), num);
-    //gdk_threads_leave();
-    
-    return NULL;
-}
-//创建新的ssh页面
-gint page_ssh_create(cfg_t *cfg)
-{
-    char *tmp;
-
-    if (NULL == cfg) {
-        return -1;
-    }
-    if (cfg->host == NULL || cfg->port == 0 ||
-        strlen(cfg->user) == 0 || strlen(cfg->pass) == 0) {
-        return -1;
-    }
-    pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
-    bzero(pg, sizeof(pg_t));
-
-    // cfg,配置文件
-    memcpy(&pg->ssh.cfg, cfg, sizeof(cfg_t));
-
-    // tab = hbox + label + button,定义新的窗口的头部信息
-    pg->head.box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    //gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
-    char title[256];
-    sprintf(title, "%s", cfg->name);
-    pg->head.label = gtk_label_new(title);
-    gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.label, FALSE, FALSE, 10);
-    //定义关闭按钮
-    pg->head.button = gtk_button_new();
-    gtk_button_set_relief(GTK_BUTTON(pg->head.button), GTK_RELIEF_NONE);
-    tmp = get_res_path(ICON_CLOSE);
-    gtk_button_set_image(GTK_BUTTON(pg->head.button), gtk_image_new_from_file(tmp));
-    free(tmp);
-    gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.button, FALSE, FALSE, 0);
-    //g_signal_connect(G_OBJECT(pg->head.button), "clicked", G_CALLBACK(on_close_clicked), pg);
-    gtk_widget_show_all(pg->head.box);
-
-    // body container,用于打开ssh界面
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-
-    pg->body = vbox;
-    g_object_set_data(G_OBJECT(pg->body), "pg", pg);
-    // pty + vte
-    GtkWidget *vte = vte_terminal_new();
-    pg->ssh.vte = vte;
-    
-    //vte_terminal_set_emulation((VteTerminal*) vte, "xterm");//warning: implicit declaration of function ‘vte_terminal_set_emulation’
-    gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
-    //未定义，暂时禁用，此项会导致ssh窗口无法打开，无法进行远程连接,vte2.91需要将vte_pty_new改为vte_pty_new_sync
-    //pg->ssh.pty = vte_pty_new_sync(VTE_PTY_DEFAULT, NULL,NULL); 
-    //vte_terminal_set_pty((VteTerminal*)vte, pg->ssh.pty);
-    //定义pty终端缩放的大小
-    //vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);
-    //vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
-    //vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
-    //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
-    // page
-    //gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
-    //gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
-
-    //gtk_widget_show_all(notebook);
-    //gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), num);
-
-    pthread_t tid;
-    pthread_create(&tid, NULL, work, pg);
-
-    //gtk_widget_grab_focus(vte);
-
-   return 0;
 }

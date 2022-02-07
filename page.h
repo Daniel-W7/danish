@@ -5,9 +5,6 @@
 #include <vte/vte.h>
 #include <gdk/gdk.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 //登录显示的版权信息
 #define SSH_PASSWORD "password: "
 #define PACKAGE     "danish"
@@ -16,14 +13,15 @@ extern "C" {
 #define EMAIL       "wanghaidi7@gmail.com"
 #define COPYRIGHT   "Copyright (c) 2021-2022 " AUTHOR " <" EMAIL "> "
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //页面函数初始化
 int page_init(GtkWidget *widget);
 int page_term();
 
 GtkWidget *page_get_notebook();
-
-
-gint page_shell_create();
 
 int page_get_count();
 
@@ -45,9 +43,7 @@ int page_send_string_crlf(int i, char *str);
 int page_set_title(int i, char *str);
 
 int window_create(GtkWidget *hub_page);
-
 #ifdef __cplusplus
 };
 #endif
-
 #endif // __PAGE_H__

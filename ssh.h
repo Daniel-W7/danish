@@ -3,18 +3,6 @@
 
 #include <gtk/gtk.h>
 #include <vte/vte.h>
-#include <gdk/gdk.h>
-
-
-#define ICON_APP    "res/icon.svg"
-#define ICON_CLOSE  "res/close.png"
-#define ICON_DIR    "res/dir.svg"
-#define ICON_SITE   "res/site.svg"
-#define ICON_SHELL  "res/shell.png"
-
-#define BTN_MAX_COUNT   16
-#define CMD_MAX_COUNT   16
-#define SSH_PASSWORD "password: "
 
 typedef struct {
     char    name[256];
@@ -24,11 +12,18 @@ typedef struct {
     char    pass[256];
 
 } cfg_t;
+
 typedef struct {
-   
+    enum {
+        PG_TYPE_HUB,
+        PG_TYPE_SSH,
+        PG_TYPE_SHELL,
+    } type;
+
+    // head
     struct {
         GtkWidget   *box;
-         GtkWidget   *image;
+        GtkWidget   *image;
         GtkWidget   *label;
         GtkWidget   *button;
     } head;
@@ -39,7 +34,7 @@ typedef struct {
     union {
         struct {
         } hub;
-        
+
         struct {
             GtkWidget *vte;
             VtePty  *pty;
@@ -53,13 +48,22 @@ typedef struct {
             VtePty  *pty;
             pid_t   child;
         } shell;
-        
     };
 
 } pg_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define SSH_PASSWORD "password: "
 
 gint page_ssh_create(cfg_t *cfg);
 
-int run_ssh(cfg_t *cfg);
+int run_ssh(pg_t *pg);
+
+#ifdef __cplusplus
+};
+
+#endif
 
 #endif // __SSH_H__

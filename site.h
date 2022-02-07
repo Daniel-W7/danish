@@ -1,10 +1,6 @@
 #ifndef __SITE_H__
 #define __SITE_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <gtk/gtk.h>
 #include <vte/vte.h>
 #include <gdk/gdk.h>
@@ -21,7 +17,11 @@ extern char PATH[256];  // $HOME + CONFIG_DIR
 #ifndef MAX
 #define MAX(a,b) ((a)>=(b)?(a):(b))
 #endif
-
+#define ICON_APP    "res/icon.svg"
+#define ICON_CLOSE  "res/close.png"
+#define ICON_DIR    "res/dir.svg"
+#define ICON_SITE   "res/site.svg"
+#define ICON_SHELL  "res/shell.png"
 //获取res路径
 static inline char* get_res_path(const char *res)
 {
@@ -56,6 +56,9 @@ static inline GtkWidget *img_from_stock(char *id, GtkIconSize size)
 {
     return gtk_image_new_from_icon_name(id, size);
 }
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int site_init();
 void site_term();
