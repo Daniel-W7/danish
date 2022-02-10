@@ -59,7 +59,7 @@ extern "C" {
 
 gint page_ssh_create(cfg_t *cfg);
 
-int run_ssh(pg_t *pg);
+void run_ssh(pg_t *pg);
 
 #ifdef __cplusplus
 };

@@ -134,13 +134,6 @@ gint page_ssh_create(cfg_t *cfg)
 {
     char *tmp;
 
-    if (NULL == cfg) {
-        return -1;
-    }
-    if (cfg->host == NULL || cfg->port == 0 ||
-        strlen(cfg->user) == 0 || strlen(cfg->pass) == 0) {
-        return -1;
-    }
     pg_t *pg = (pg_t*) malloc(sizeof(pg_t));
     bzero(pg, sizeof(pg_t));
 
