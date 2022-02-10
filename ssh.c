@@ -261,12 +261,21 @@ static int x11_send_receive(LIBSSH2_CHANNEL *channel, int sock)
     }
     return 0;
 }
+//定义pg->type == PG_TYPE_SSH的情况
+void *wait_ssh_child(void *p)
+{
+    //pg_t为page.h中定义的结构体
+    pg_t *pg = (pg_t*) p;
+   
+        waitpid(pg->ssh.child, NULL, 0);
+        pg->ssh.need_stop = 1;
 
+    return NULL;
+}
 /*
  * Main, more than inspired by ssh2.c by Bagder
  */
-int connect_ssh(pg_t *pg)
-//int run_ssh(cfg_t *cfg)
+int run_ssh(pg_t *pg)
 {
     
     unsigned long hostaddr;
@@ -296,221 +305,19 @@ int connect_ssh(pg_t *pg)
     struct timeval timeval_out;
     timeval_out.tv_sec = 0;
     timeval_out.tv_usec = 10;
-/*
+    /*
     hostaddr = pg->ssh.cfg.host;
     hostport = pg->ssh.cfg.port;
     username = pg->ssh.cfg.user;
     password = pg->ssh.cfg.pass;
-  */
-//const char *host= cfg->host;
+    */
+    //const char *host= cfg->host;
     //const char *host_p=cfg->host;
     hostaddr = inet_addr("127.0.0.1");
     hostport = 22 ;
     username = "test";
     password = "test";
 
-    rc = libssh2_init(0);
-    if(rc != 0) {
-        fprintf(stderr, "libssh2 initialization failed (%d)\n", rc);
-        return 1;
-    }
-
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if(sock == -1) {
-        perror("socket");
-        return -1;
-    }
-
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons(hostport);
-    sin.sin_addr.s_addr = hostaddr;
-
-    rc = connect(sock, (struct sockaddr *) &sin,
-                 sizeof(struct sockaddr_in));
-    if(rc != 0) {
-        fprintf(stderr, "Failed to established connection!\n");
-        return -1;
-    }
-    /* Open a session */
-    session = libssh2_session_init();
-    rc      = libssh2_session_handshake(session, sock);
-    if(rc != 0) {
-        fprintf(stderr, "Failed Start the SSH session\n");
-        return -1;
-    }
-
-    if(set_debug_on == 1)
-        libssh2_trace(session, LIBSSH2_TRACE_CONN);
-
-    /* ignore pedantic warnings by gcc on the callback argument */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-    /* Set X11 Callback */
-    libssh2_session_callback_set(session, LIBSSH2_CALLBACK_X11,
-                                 (void *)x11_callback);
-#pragma GCC diagnostic pop
-
-    /* Authenticate via password */
-    rc = libssh2_userauth_password(session, username, password);
-    if(rc != 0) {
-        fprintf(stderr, "Failed to authenticate\n");
-        session_shutdown(session);
-        close(sock);
-        return -1;
-    }
-
-    /* Open a channel */
-    channel  = libssh2_channel_open_session(session);
-    if(channel == NULL) {
-        fprintf(stderr, "Failed to open a new channel\n");
-        session_shutdown(session);
-        close(sock);
-        return -1;
-    }
-    /* Request a PTY */
-    //char *slave = ptsname(pg->body.pty);
-    //rc = libssh2_channel_request_pty(channel,slave);
-    //char *pty = pg->ssh.pty;
-    rc = libssh2_channel_request_pty(channel,"xterm");
-    if(rc != 0) {
-        fprintf(stderr, "Failed to request a pty\n");
-        session_shutdown(session);
-        close(sock);
-        return -1;
-    }
-
-    /* Request X11 */
-    rc = libssh2_channel_x11_req(channel, 0);
-    if(rc != 0) {
-        fprintf(stderr, "Failed to request X11 forwarding\n");
-        session_shutdown(session);
-        close(sock);
-        return -1;
-    }
-
-    /* Request a shell */
-    rc = libssh2_channel_shell(channel);
-    if(rc != 0) {
-        fprintf(stderr, "Failed to open a shell\n");
-        session_shutdown(session);
-        close(sock);
-        return -1;
-    }
-
-    rc = _raw_mode();
-    if(rc != 0) {
-        fprintf(stderr, "Failed to entered in raw mode\n");
-        session_shutdown(session);
-        close(sock);
-        return -1;
-    }
-
-    memset(&w_size, 0, sizeof(struct winsize));
-    memset(&w_size_bck, 0, sizeof(struct winsize));
-
-    while(1) {
-
-        //将指定的文件描述符集清空
-        FD_ZERO(&set);
-        //在文件描述符集合中增加一个新的文件描述符
-        FD_SET(fileno(stdin), &set);
-
-        /* Search if a resize pty has to be send */
-        //fileno()用来取得参数stream 指定的文件流所使用的文件描述词.
-        ioctl(fileno(stdin), TIOCGWINSZ, &w_size);
-        if((w_size.ws_row != w_size_bck.ws_row) ||
-           (w_size.ws_col != w_size_bck.ws_col)) {
-            w_size_bck = w_size;
-
-            libssh2_channel_request_pty_size(channel,
-                                             w_size.ws_col,
-                                             w_size.ws_row);
-        }
-
-        buf = calloc(bufsiz, sizeof(char));
-        if(buf == NULL)
-            break;
-
-        fds = malloc(sizeof (LIBSSH2_POLLFD));
-        if(fds == NULL) {
-            free(buf);
-            break;
-        }
-
-        fds[0].type = LIBSSH2_POLLFD_CHANNEL;
-        fds[0].fd.channel = channel;
-        fds[0].events = LIBSSH2_POLLFD_POLLIN;
-        fds[0].revents = LIBSSH2_POLLFD_POLLIN;
-
-        rc = libssh2_poll(fds, nfds, 0);
-        if(rc >0) {
-            libssh2_channel_read(channel, buf, sizeof(buf));
-            fprintf(stdout, "%s", buf);
-            fflush(stdout);
-        }
-
-        /* Looping on X clients */
-        if(gp_x11_chan != NULL) {
-            current_node = gp_x11_chan;
-        }
-        else
-            current_node = NULL;
-
-        while(current_node != NULL) {
-            struct chan_X11_list *next_node;
-            rc = x11_send_receive(current_node->chan, current_node->sock);
-            next_node = current_node->next;
-            if(rc == -1) {
-                shutdown(current_node->sock, SHUT_RDWR);
-                close(current_node->sock);
-                remove_node(current_node);
-            }
-
-            current_node = next_node;
-        }
-
-
-        rc = select(fileno(stdin) + 1, &set, NULL, NULL, &timeval_out);
-        if(rc > 0) {
-            /* Data in stdin*/
-            rc = read(fileno(stdin), buf, 1);
-            if(rc > 0)
-                libssh2_channel_write(channel, buf, sizeof(buf));
-        }
-
-        free(fds);
-        free(buf);
-
-        if(libssh2_channel_eof (channel) == 1) {
-            break;
-        }
-    }
-
-    if(channel) {
-        libssh2_channel_free(channel);
-        channel = NULL;
-    }
-     
-    _normal_mode();
-
-    libssh2_exit();
-
-    return 0;
-}
-//定义pg->type == PG_TYPE_SSH的情况
-void *wait_ssh_child(void *p)
-{
-    //pg_t为page.h中定义的结构体
-    pg_t *pg = (pg_t*) p;
-   
-        waitpid(pg->ssh.child, NULL, 0);
-        pg->ssh.need_stop = 1;
-
-    return NULL;
-}
-//打开并建立ssh连接
-void run_ssh(pg_t *pg)
-{
     /* 
      *输出输入流程
      * [output flow-chart]
@@ -528,10 +335,10 @@ void run_ssh(pg_t *pg)
     char *slave = ptsname(mine_master_fd);//ptsname() -- 获得从伪终端名(slave pseudo-terminal)
     //将页面锁定到vte中
     if (grantpt(mine_master_fd) != 0 ||unlockpt(mine_master_fd) != 0) {
-        return;
+        return 0;
     }
-
-    pg->ssh.child = fork();//定义了一个ssh的子进程，如果fork返回0，说明在ssh子进程中
+    //定义了一个ssh的子进程，如果fork返回0，说明在ssh子进程中
+    pg->ssh.child = fork();
     // child for exec
     if (pg->ssh.child == 0) {
         //setenv()用来改变或增加环境变量的内容。参数为环境变量名称字符串，变量内容，参数overwrite用来决定是否要改变已存在的环境变量。
@@ -553,20 +360,197 @@ void run_ssh(pg_t *pg)
         dup2(mine_slave_fd, 1);
         dup2(mine_slave_fd, 2);
 
-        //printf("\n");
         printf(PACKAGE" v"VERSION"\n");
         printf(COPYRIGHT"\n");
-        printf("\n");
         printf("Connecting ... %s:%s\n", pg->ssh.cfg.host, pg->ssh.cfg.port);
         //printf("\n");
-/*
+        /*
         char host[512];
         memset(host, 0x00, sizeof(host));//在一段内存块中填充某个给定的值
         sprintf(host, "%s@%s", pg->ssh.cfg.user, pg->ssh.cfg.host);//将配置文件里的用户名和host，以类似root@127.0.0.1的方式输出到host中
         execlp(SSH, SSH, host, "-p", pg->ssh.cfg.port, NULL);//执行系统命令，进行ssh连接
-  */
-        //进行ssh连接
-        connect_ssh(pg);      
+        */
+
+        rc = libssh2_init(0);
+        if(rc != 0) {
+            fprintf(stderr, "libssh2 initialization failed (%d)\n", rc);
+            return 1;
+        }
+
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if(sock == -1) {
+            perror("socket");
+            return -1;
+        }
+
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(hostport);
+        sin.sin_addr.s_addr = hostaddr;
+
+        rc = connect(sock, (struct sockaddr *) &sin,sizeof(struct sockaddr_in));
+        if(rc != 0) {
+            fprintf(stderr, "Failed to established connection!\n");
+            return -1;
+        }
+        /* Open a session */
+        session = libssh2_session_init();
+        rc      = libssh2_session_handshake(session, sock);
+        if(rc != 0) {
+            fprintf(stderr, "Failed Start the SSH session\n");
+            return -1;
+        }
+
+        if(set_debug_on == 1)
+            libssh2_trace(session, LIBSSH2_TRACE_CONN);
+
+            /* ignore pedantic warnings by gcc on the callback argument */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wpedantic"
+            /* Set X11 Callback */
+            libssh2_session_callback_set(session, LIBSSH2_CALLBACK_X11,
+                                        (void *)x11_callback);
+        #pragma GCC diagnostic pop
+
+        /* Authenticate via password */
+        rc = libssh2_userauth_password(session, username, password);
+        if(rc != 0) {
+            fprintf(stderr, "Failed to authenticate\n");
+            session_shutdown(session);
+            close(sock);
+            return -1;
+        }
+
+        /* Open a channel */
+        channel  = libssh2_channel_open_session(session);
+        if(channel == NULL) {
+            fprintf(stderr, "Failed to open a new channel\n");
+            session_shutdown(session);
+            close(sock);
+            return -1;
+        }
+        /* Request a PTY */
+        //char *slave = ptsname(pg->body.pty);
+        //rc = libssh2_channel_request_pty(channel,slave);
+        //char *pty = pg->ssh.pty;
+        rc = libssh2_channel_request_pty(channel,"xterm");
+        if(rc != 0) {
+            fprintf(stderr, "Failed to request a pty\n");
+            session_shutdown(session);
+            close(sock);
+            return -1;
+        }
+
+        /* Request X11 */
+        rc = libssh2_channel_x11_req(channel, 0);
+        if(rc != 0) {
+            fprintf(stderr, "Failed to request X11 forwarding\n");
+            session_shutdown(session);
+            close(sock);
+            return -1;
+        }
+
+        /* Request a shell */
+        rc = libssh2_channel_shell(channel);
+        if(rc != 0) {
+            fprintf(stderr, "Failed to open a shell\n");
+            session_shutdown(session);
+            close(sock);
+            return -1;
+        }
+
+        rc = _raw_mode();
+        if(rc != 0) {
+            fprintf(stderr, "Failed to entered in raw mode\n");
+            session_shutdown(session);
+            close(sock);
+            return -1;
+        }
+
+        memset(&w_size, 0, sizeof(struct winsize));
+        memset(&w_size_bck, 0, sizeof(struct winsize));
+
+        while(1) {
+
+            //将指定的文件描述符集清空
+            FD_ZERO(&set);
+            //在文件描述符集合中增加一个新的文件描述符
+            FD_SET(fileno(stdin), &set);
+
+            /* Search if a resize pty has to be send */
+            //fileno()用来取得参数stream 指定的文件流所使用的文件描述词.
+            ioctl(fileno(stdin), TIOCGWINSZ, &w_size);
+            if((w_size.ws_row != w_size_bck.ws_row) ||(w_size.ws_col != w_size_bck.ws_col)) 
+                {
+                    w_size_bck = w_size;
+                    libssh2_channel_request_pty_size(channel,w_size.ws_col,w_size.ws_row);
+                }
+
+            buf = calloc(bufsiz, sizeof(char));
+            if(buf == NULL)
+                break;
+
+            fds = malloc(sizeof (LIBSSH2_POLLFD));
+            if(fds == NULL) {
+                free(buf);
+                break;
+            }
+
+            fds[0].type = LIBSSH2_POLLFD_CHANNEL;
+            fds[0].fd.channel = channel;
+            fds[0].events = LIBSSH2_POLLFD_POLLIN;
+            fds[0].revents = LIBSSH2_POLLFD_POLLIN;
+
+            rc = libssh2_poll(fds, nfds, 0);
+            if(rc >0) {
+                libssh2_channel_read(channel, buf, sizeof(buf));
+                fprintf(stdout, "%s", buf);
+                fflush(stdout);
+            }
+
+            /* Looping on X clients */
+            if(gp_x11_chan != NULL) {
+                current_node = gp_x11_chan;
+            }
+            else
+                current_node = NULL;
+
+            while(current_node != NULL) {
+                struct chan_X11_list *next_node;
+                rc = x11_send_receive(current_node->chan, current_node->sock);
+                next_node = current_node->next;
+                if(rc == -1) {
+                    shutdown(current_node->sock, SHUT_RDWR);
+                    close(current_node->sock);
+                    remove_node(current_node);
+                }
+
+                current_node = next_node;
+            }
+
+
+            rc = select(fileno(stdin) + 1, &set, NULL, NULL, &timeval_out);
+            if(rc > 0) {
+                /* Data in stdin*/
+                rc = read(fileno(stdin), buf, 1);
+                if(rc > 0)
+                    libssh2_channel_write(channel, buf, sizeof(buf));
+            }
+
+            free(fds);
+            free(buf);
+
+            if(libssh2_channel_eof (channel) == 1) {
+                break;
+            }
+        }
+
+        if(channel) {
+            libssh2_channel_free(channel);
+            channel = NULL;
+        }
+        
+        _normal_mode();
+
     }
 
     // thread for waitpid，线程管理，管理单个notebook页面的开启关闭操作
@@ -578,14 +562,14 @@ void run_ssh(pg_t *pg)
     struct winsize old_size = {0,0,0,0};
     int row = 0;
     int col = 0;
-    fd_set set;
+    //fd_set set;
     struct timeval tv = {0, 100};
     //若是ssh没有关闭，则执行下面的循环
     while (pg->ssh.need_stop == 0) {
         // vte_pty的尺寸变化时，修改mine_master_fd,以便它去通知ssh
         if (vte_pty_get_size(pg->ssh.pty, &row, &col, NULL) == TRUE) {
-            if (row != old_size.ws_row ||
-                col != old_size.ws_col) {
+            if (row != old_size.ws_row ||col != old_size.ws_col) 
+            {
                 old_size.ws_row = (short) row;
                 old_size.ws_col = (short) col;
                 ioctl(mine_master_fd, TIOCSWINSZ, &old_size);
@@ -599,11 +583,13 @@ void run_ssh(pg_t *pg)
         // this_app >> mine_master_fd >> mine_slave_fd >> ssh
         FD_ZERO(&set);//将指定的文件描述符集清空
         FD_SET(mine_master_fd, &set);//用于在文件描述符集合中增加一个新的文件描述符。
-        if (select(mine_master_fd+1, &set, NULL, NULL, &tv) > 0) {
+        if (select(mine_master_fd+1, &set, NULL, NULL, &tv) > 0) 
+        {
             char buf[256];
             int len = read(mine_master_fd, buf, sizeof(buf));//读文件函数(由已打开的文件读取数据)
             if (len > 0) {
-                write(vte_slave_fd, buf, len);//write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
+                //write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
+                write(vte_slave_fd, buf, len);
 
                 // 如果当前没有登录成功, 自动输入密码
                 if (already_login == 0 && str_is_endwith(buf, len, SSH_PASSWORD)) {
@@ -618,13 +604,17 @@ void run_ssh(pg_t *pg)
         // 读取vte_pty的用户输入，并发送到给ssh
         //vte >> vte_master_fd >> vte_slave_fd >> this_app >> mine_master_fd >> mine_slave_fd >> ssh
         // vte_slave_fd -> mine_master_fd
-        FD_ZERO(&set);//将指定的文件描述符集清空
-        FD_SET(vte_slave_fd, &set);//用于在文件描述符集合中增加一个新的文件描述符。
+        //将指定的文件描述符集清空
+        FD_ZERO(&set);
+        //用于在文件描述符集合中增加一个新的文件描述符。
+        FD_SET(vte_slave_fd, &set);
         if (select(vte_slave_fd+1, &set, NULL, NULL, &tv) > 0) {
             char buf[256];
-            int len = read(vte_slave_fd, buf, sizeof(buf));//读文件函数(由已打开的文件读取数据)
+            //读文件函数(由已打开的文件读取数据)
+            int len = read(vte_slave_fd, buf, sizeof(buf));
             if (len > 0) {
-                write(mine_master_fd, buf, len);//write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
+                //write()会把参数buf 所指的内存写入count 个字节到参数fd 所指的文件内
+                write(mine_master_fd, buf, len);
             }
         }
 
@@ -632,4 +622,8 @@ void run_ssh(pg_t *pg)
     }
 
     //vte_pty_close(pg->ssh.pty);//命令已过期，暂时禁用
+
+    libssh2_exit();
+
+    return 0;
 }
