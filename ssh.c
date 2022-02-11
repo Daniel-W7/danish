@@ -337,24 +337,27 @@ int run_ssh(pg_t *pg)
     if (grantpt(mine_master_fd) != 0 ||unlockpt(mine_master_fd) != 0) {
         return 0;
     }
+    
     //定义了一个ssh的子进程，如果fork返回0，说明在ssh子进程中
     pg->ssh.child = fork();
     // child for exec
     if (pg->ssh.child == 0) {
         //setenv()用来改变或增加环境变量的内容。参数为环境变量名称字符串，变量内容，参数overwrite用来决定是否要改变已存在的环境变量。
-        setenv("TERM", "xterm", 1);
+        //setenv("TERM", "xterm", 1);
         // used by ssh open函数用来打开一个设备，他返回的是一个整型变量，如果这个值等于-1，说明打开文件出现错误，如果为大于0的值，那么这个值代表的就是文件描述符
         int mine_slave_fd = open(slave, O_RDWR);
         //重新创建一个session
-        setsid();
-        //将pid进程的进程组ID设置成pgid，创建一个新进程组或加入一个已存在的进程组
-        setpgid(0, 0);
-        //设备驱动程序中对设备的I/O通道进行管理的函数
-        ioctl(mine_slave_fd, TIOCGWINSZ, mine_slave_fd);
+        //setsid();
 
-        close(0);//close ()关闭文件，挂壁open()打开的文件
-        close(1);
-        close(2);
+        //将pid进程的进程组ID设置成pgid，创建一个新进程组或加入一个已存在的进程组
+        //setpgid(0, 0);
+        //设备驱动程序中对设备的I/O通道进行管理的函数
+        //ioctl(mine_slave_fd, TIOCGWINSZ, mine_slave_fd);
+        //close ()关闭文件，关闭open()打开的文件
+        //close(0);
+        //close(1);
+        //close(2);
+        
         //用来复制参数oldfd 所指的文件描述词, 并将它拷贝至参数newfd 后一块返回
         dup2(mine_slave_fd, 0);
         dup2(mine_slave_fd, 1);
