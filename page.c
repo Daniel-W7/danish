@@ -263,10 +263,11 @@ int window_create(GtkWidget *sitetree)
     	//定义hbox，横向显示，左侧用于放置站点信息，右侧用于放置shell和ssh终端
 	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);   
         
-        	//定义侧边栏站点树显示
-		gtk_container_add(GTK_CONTAINER(hbox), sitetree);
-        	//定义ssh连接notebook显示
-		gtk_container_add(GTK_CONTAINER(hbox), notebook);
+       	//定义侧边栏站点树显示
+		//gtk_container_add(GTK_CONTAINER(hbox), sitetree);
+        gtk_box_pack_start(GTK_BOX(hbox),sitetree,FALSE,FALSE,0);
+        //定义ssh连接notebook显示
+		gtk_box_pack_start(GTK_BOX(hbox),notebook,TRUE,TRUE,0);
 	
 	//将hbox添加到window里面，显示两个组件
 	gtk_container_add(GTK_CONTAINER(window), hbox);
