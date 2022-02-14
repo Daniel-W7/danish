@@ -82,7 +82,6 @@ static void on_notebook_switch(GtkNotebook *notebook, GtkWidget *page,
     }
 }
 */
-/*
 //关闭对应page
 static void on_close_clicked(GtkWidget *widget, gpointer user_data)
 {
@@ -90,7 +89,6 @@ static void on_close_clicked(GtkWidget *widget, gpointer user_data)
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), pg->body);
     page_close(num);
 }
-*/
 /*
 //定义窗口打开关闭移动的操作
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
@@ -114,6 +112,38 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
 */
 /*
     }
+    return FALSE;
+}
+*/
+/*
+static gboolean on_vte_button_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+    VteTerminal *vte = (VteTerminal*) widget;
+    GdkEventButton *button = (GdkEventButton*) event;
+
+    if (button->type == GDK_BUTTON_PRESS && // 按下
+        button->button == 3) {  // 右键
+
+        gtk_widget_set_sensitive(m_menu_copy, FALSE);
+        gtk_widget_set_sensitive(m_menu_copy_paste, FALSE);
+        gtk_widget_set_sensitive(m_menu_paste, FALSE);
+
+        // copy / copy_paste
+        if (vte_terminal_get_has_selection(vte)) {
+            gtk_widget_set_sensitive(m_menu_copy, TRUE);
+            gtk_widget_set_sensitive(m_menu_copy_paste, TRUE);
+        }
+
+        // paste
+        GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+        if (clipboard && gtk_clipboard_wait_is_text_available(clipboard)) {
+            gtk_widget_set_sensitive(m_menu_paste, TRUE);
+        }
+
+        // popup menu
+        gtk_menu_popup(GTK_MENU(m_menu), NULL, NULL, NULL, NULL, button->button, button->time);;
+    }
+
     return FALSE;
 }
 */
@@ -154,7 +184,7 @@ gint page_ssh_create(cfg_t *cfg)
     gtk_button_set_image(GTK_BUTTON(pg->head.button), gtk_image_new_from_file(tmp));
     free(tmp);
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.button, FALSE, FALSE, 0);
-    //g_signal_connect(G_OBJECT(pg->head.button), "clicked", G_CALLBACK(on_close_clicked), pg);
+    g_signal_connect(G_OBJECT(pg->head.button), "clicked", G_CALLBACK(on_close_clicked), pg);
     gtk_widget_show_all(pg->head.box);
 
     // body container,用于打开ssh界面
@@ -175,7 +205,7 @@ gint page_ssh_create(cfg_t *cfg)
     vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
-    //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
+    g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
