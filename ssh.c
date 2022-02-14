@@ -10,7 +10,6 @@
 /*定义页面显示内容，以及ssh连接，tty，pty配置内容*/
 #include <fcntl.h>
 #include <pthread.h>
-
 #include <unistd.h>
 #include <string.h>
 #include <strings.h>
@@ -21,22 +20,12 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
-
-#include <string.h>
-#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <sys/select.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/un.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <stdlib.h>
-#include <termios.h>
 
 #include <libssh2.h>
 
@@ -305,18 +294,18 @@ int run_ssh(pg_t *pg)
     struct timeval timeval_out;
     timeval_out.tv_sec = 0;
     timeval_out.tv_usec = 10;
-    /*
-    hostaddr = pg->ssh.cfg.host;
-    hostport = pg->ssh.cfg.port;
+    
+    hostaddr = inet_addr(pg->ssh.cfg.host);
+    hostport = atoi(pg->ssh.cfg.port);
     username = pg->ssh.cfg.user;
     password = pg->ssh.cfg.pass;
-    */
+    
     //const char *host= cfg->host;
     //const char *host_p=cfg->host;
-    hostaddr = inet_addr("127.0.0.1");
-    hostport = 22 ;
-    username = "test";
-    password = "test";
+    //hostaddr = inet_addr("127.0.0.1");
+    //hostport = 22 ;
+    //username = "test";
+    //password = "test";
 
     /* 
      *输出输入流程
@@ -365,7 +354,7 @@ int run_ssh(pg_t *pg)
 
         printf(PACKAGE" v"VERSION"\n");
         printf(COPYRIGHT"\n");
-        printf("Connecting ... %s:%s\n", pg->ssh.cfg.host, pg->ssh.cfg.port);
+        printf("Connecting ... %s:%s\n",pg->ssh.cfg.host,pg->ssh.cfg.port);
         //printf("\n");
         /*
         char host[512];

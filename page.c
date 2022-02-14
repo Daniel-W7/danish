@@ -205,7 +205,7 @@ gint page_ssh_create(cfg_t *cfg)
     vte_terminal_set_font_scale((VteTerminal*)vte, 1.5);
     vte_terminal_set_scrollback_lines((VteTerminal*)vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)vte, 1);
-    g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
+    //g_signal_connect(G_OBJECT(vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), pg->body, pg->head.box);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), pg->body, TRUE);
@@ -215,10 +215,11 @@ gint page_ssh_create(cfg_t *cfg)
 
     pthread_t tid;
     pthread_create(&tid, NULL, work, pg);
-
     gtk_widget_grab_focus(vte);
 
    return num;
+   
+
 }
 
 
