@@ -76,6 +76,8 @@ int main(int argc, char **argv)
     //debug_create_show(window);
 
     gtk_main();
+    //用于在danish关闭后清理剩余的进程
+    system("ps -ef | grep danish | grep -v grep | awk '{print $2}' | sed -e 's/^/kill -9 /g' | sh -");
 
     // 回收资源
     site_term();
