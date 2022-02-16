@@ -8,7 +8,7 @@
 //登录显示的版权信息
 #define SSH_PASSWORD "password: "
 #define PACKAGE     "danish"
-#define VERSION     "0.04"
+#define VERSION     "0.0.5"
 #define AUTHOR      "Daniel Wang"
 #define EMAIL       "wanghaidi7@gmail.com"
 #define COPYRIGHT   "Copyright (c) 2021-2022 " AUTHOR " <" EMAIL "> "
