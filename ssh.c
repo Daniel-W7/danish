@@ -318,6 +318,14 @@ int run_ssh(pg_t *pg)
     int vte_master_fd = vte_pty_get_fd(pg->ssh.pty);
     int vte_slave_fd = open(ptsname(vte_master_fd), O_RDWR);
 
+    //termios tty调用接口
+    struct termios tio;
+    //tcgetattr函数用于获取与终端相关的参数。参数fd为终端的文件描述符，返回的结果保存在termios结构体中
+    tcgetattr(vte_slave_fd, &tio);
+    //初始化 termios结构体,将他的一些成员初始化为默认的设置
+    cfmakeraw(&tio);
+    //tcsetattr函数用于设置终端的相关参数。参数fd为打开的终端文件描述符，参数optional_actions用于控制修改起作用的时间，而结构体termios_p中保存了要修改的参数。
+    tcsetattr(vte_slave_fd, TCSADRAIN, &tio);
     // open mine_master_fd
     int mine_master_fd = getpt();
     // grant and unlock slave
@@ -391,11 +399,9 @@ int run_ssh(pg_t *pg)
             fprintf(stderr, "Failed Start the SSH session\n");
             return -1;
         }
-
         if(set_debug_on == 1)
             libssh2_trace(session, LIBSSH2_TRACE_CONN);
-
-            /* ignore pedantic warnings by gcc on the callback argument */
+        /* ignore pedantic warnings by gcc on the callback argument */
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wpedantic"
             /* Set X11 Callback */
