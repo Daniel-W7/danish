@@ -1,5 +1,4 @@
 # danish
-
 danish 是一个基于 gtk-3.0 的 ssh 连接管理工具，之后计划加上sftp的功能
 
 GITHUB地址：https://github.com/Daniel-W7/danish
@@ -36,13 +35,9 @@ GITee地址：https://gitee.com/daniel-w7/danish
 
 	desktop-file-utils
 
-	libssh2-1-dev
-
-	libssh2-1
-
 	安装命令：
 
-		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils libssh2-1 libssh2-1-dev
+		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils
 
 3、编译方法
 	(1)手动编译

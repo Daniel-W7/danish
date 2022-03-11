@@ -13,8 +13,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
-#include <libssh2.h>
-
+#include "config.h"
 #include "page.h"
 #include "ssh.h"
 #include "site.h"
@@ -58,11 +57,10 @@ int main(int argc, char **argv)
 
     // 创建site页
     site_init();
-   
+
     // 装载site配置
     site_load();
 
- 
     // 创建tab容器（使用site页作为hub_page)
     //读取site的配置信息
 	GtkWidget *sitetree = site_get_object();
@@ -76,9 +74,9 @@ int main(int argc, char **argv)
     //debug_create_show(window);
 
     gtk_main();
-    //用于在danish关闭后清理剩余的进程
-    system("ps -ef | grep danish | grep -v grep | awk '{print $2}' | sed -e 's/^/kill -9 /g' | sh -");
 
+    //用于在danish关闭后清理剩余的进程
+    //system("ps -ef | grep danish | grep -v grep | awk '{print $2}' | sed -e 's/^/kill -9 /g' | sh -");
     // 回收资源
     site_term();
 

@@ -3,25 +3,82 @@
 
 #include <gtk/gtk.h>
 #include <vte/vte.h>
-#include <gdk/gdk.h>
 
-//登录显示的版权信息
-#define SSH_PASSWORD "password: "
-#define PACKAGE     "danish"
-#define VERSION     "0.0.5"
-#define AUTHOR      "Daniel Wang"
-#define EMAIL       "wanghaidi7@gmail.com"
-#define COPYRIGHT   "Copyright (c) 2021-2022 " AUTHOR " <" EMAIL "> "
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//页面函数初始化
+#define SSH_PASSWORD "password: "
+
+typedef struct {
+    char    name[256];
+    char    str[256];
+} cmd_t;
+
+typedef struct {
+    char    name[256];
+    cmd_t   cmd[CMD_MAX_COUNT];
+} btn_t;
+
+typedef struct {
+    char    name[256];
+    char    host[256];
+    char    port[256];
+    char    user[256];
+    char    pass[256];
+
+    btn_t   btn[BTN_MAX_COUNT];
+} cfg_t;
+
+typedef struct {
+    //定义枚举type
+    enum {
+        PG_TYPE_HUB,
+        PG_TYPE_SSH,
+        PG_TYPE_SHELL,
+    } type;
+
+    // head
+    struct {
+        GtkWidget   *box;
+        GtkWidget   *image;
+        GtkWidget   *label;
+        GtkWidget   *button;
+    } head;
+
+    // body
+    GtkWidget   *body;
+
+    union {
+        struct {
+        } hub;
+
+        struct {
+            GtkWidget *vte;
+            VtePty  *pty;
+            pid_t   child;
+            int     need_stop;
+            cfg_t   cfg;
+        } ssh;
+
+        struct {
+            GtkWidget *vte;
+            VtePty  *pty;
+            pid_t   child;
+        } shell;
+    };
+
+} pg_t;
+
 int page_init(GtkWidget *widget);
 int page_term();
 
 GtkWidget *page_get_notebook();
+
+gint page_ssh_create(cfg_t *cfg);
+gint page_shell_create();
 
 int page_get_count();
 
@@ -43,7 +100,9 @@ int page_send_string_crlf(int i, char *str);
 int page_set_title(int i, char *str);
 
 int window_create(GtkWidget *hub_page);
+
 #ifdef __cplusplus
 };
 #endif
+
 #endif // __PAGE_H__
