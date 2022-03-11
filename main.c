@@ -66,7 +66,13 @@ int main(int argc, char **argv)
 	GtkWidget *sitetree = site_get_object();
 	//初始化页面
     //gtk_widget_grab_focus(sitetree);
-
+    // 创建tab容（使用site页作为hub_page)
+    /*
+    GtkWidget *hub = site_get_object();
+   
+    gtk_widget_grab_focus(hub);
+    */
+    //page_init(sitetree);
     // 创建主窗口
     window_create(sitetree);
 

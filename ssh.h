@@ -1,9 +1,8 @@
-#ifndef __PAGE_H__
-#define __PAGE_H__
+#ifndef __SSH_H__
+#define __SSH_H__
 
 #include <gtk/gtk.h>
 #include <vte/vte.h>
-
 #include "config.h"
 
 #ifdef __cplusplus
@@ -74,8 +73,9 @@ typedef struct {
 void *wait_ssh_child(void *p);
 void run_shell(pg_t *pg);
 void run_ssh(pg_t *pg);
+
 #ifdef __cplusplus
-};
+}
 #endif
 
-#endif // __PAGE_H__
+#endif // ___H__
