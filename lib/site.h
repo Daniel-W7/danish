@@ -9,7 +9,7 @@ extern const char *HOME; // $HOME
 extern char PATH[256];  // $HOME + CONFIG_DIR
 
 //配置文件路径配置
-#define CONFIG_DIR    ".danish"
+#define CONFIG_DIR    ".danissh"
 #ifndef MIN
 #define MIN(a,b) ((a)<=(b)?(a):(b))
 #endif

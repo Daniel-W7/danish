@@ -1,0 +1,73 @@
+#程序配置信息
+GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
+datadir = @datadir@
+localedir = @localedir@
+
+MSGFMT = @MSGFMT@
+XGETTEXT = @XGETTEXT@
+MSGMERGE = msgmerge
+
+LINGUAS = am ar as az be bg bn_IN bn bs ca ca@valencia cs da de dz el eo es eu fi fr ga gl gu he hi hr hu it ja kn ko lt lv mk ml mr ms nb ne nl oc or pa pl pt_BR pt ro ru rw sk sl sq sr@Latn sr sv ta te th tr uk zh_CN zh_HK zh_TW
+POTFILES = ../lib/cache.c ../lib/charset-conv.c ../lib/config_file.c ../lib/gftp.h ../lib/misc.c ../lib/options.h ../lib/protocol_bookmark.c ../lib/protocol_fsp.c ../lib/protocol_ftp.c ../lib/protocol_ftps.c ../lib/protocol_http.c ../lib/protocol_https.c ../lib/protocol_localfs.c ../lib/protocols.c ../lib/pty.c ../lib/socket-connect.c ../lib/sockutils.c ../lib/sshv2.c ../lib/sslcommon.c ../src/gtk/bookmarks.c ../src/gtk/bookmarks_edit_entry.c ../src/gtk/chmod_dialog.c ../src/gtk/dnd.c ../src/gtk/gftp-gtk.c ../src/gtk/gtkui.c ../src/gtk/gtkui_transfer.c ../src/gtk/listbox.c ../src/gtk/menu-items.c ../src/gtk/misc-gtk.c ../src/gtk/options_dialog.c ../src/gtk/transfer.c ../src/gtk/view_dialog.c ../src/text/gftp-text.c ../src/text/textui.c ../src/uicommon/gftpui.c
+
+all: all-@USE_NLS@
+all-yes:
+	@catalogs="$(LINGUAS)"; \
+	for i in $${catalogs} ; do \
+		if ! test -f $${i}.mo ; then \
+			echo "$(MSGFMT) -o $${i}.mo $${i}.po"; \
+			$(MSGFMT) -o $${i}.mo $${i}.po || exit 1; \
+		fi; \
+	done \
+
+all-no:
+
+install: install-data-@USE_NLS@
+install-data-no: all
+install-data-yes: all
+	@catalogs="$(LINGUAS)"; \
+	for cat in $${catalogs}; do \
+		dir=$(DESTDIR)$(localedir)/$${cat}/LC_MESSAGES; \
+		mkdir -p $${dir}; \
+		echo "install -c -m 644 $${cat}.mo $${dir}/$(GETTEXT_PACKAGE).mo"; \
+		install -c -m 644 $${cat}.mo $${dir}/$(GETTEXT_PACKAGE).mo; \
+	done
+
+uninstall:
+	@catalogs="$(LINGUAS)"; \
+	for cat in $${catalogs}; do \
+		echo "rm -f $(DESTDIR)$(localedir)/$${cat}/LC_MESSAGES/$(GETTEXT_PACKAGE).mo"; \
+		rm -f $(DESTDIR)$(localedir)/$${cat}/LC_MESSAGES/$(GETTEXT_PACKAGE).mo; \
+	done
+
+mostlyclean:
+	rm -f *.pox *.old.po *.new.po *.mo *.gmo *.msg *.cat *.cat.m
+
+clean: mostlyclean
+
+distclean: clean
+	rm -f Makefile POTFILES
+
+
+update-pot:
+	$(XGETTEXT) --default-domain=$(GETTEXT_PACKAGE) \
+		--add-comments --keyword=_ --keyword=N_ --from-code=UTF-8 \
+		-o $(GETTEXT_PACKAGE).pot $(POTFILES)
+
+update-po: update-pot
+	@catalogs="$(LINGUAS)"; \
+	for lang in $${catalogs}; do \
+		printf " %s " "$${lang}"; \
+		if $(MSGMERGE) $${lang}.po $(GETTEXT_PACKAGE).pot -o $${lang}.new.po; then \
+			mv -f $${lang}.new.po $${lang}.po || exit 1; \
+		else \
+			echo "msgmerge for $${lang} failed!"; \
+			rm -f $${lang}.new.po; \
+		fi; \
+	done
+
