@@ -41,17 +41,17 @@ test -z "$LIBTOOLIZE" && LIBTOOLIZE=libtoolize #paranoid precaution
 # pre-create some dirs / files,创建一些必要的文件和文件夹
 # 定义编译目录
 auxdir='.'
-#grep -q,不显示任何信息
-#如果configure.ac里面有配置的话，则使用configure.ac里面的配置
+# grep -q,不显示任何信息
+# 如果configure.ac里面有配置的话，则使用configure.ac里面的配置
 if grep -q "AC_CONFIG_AUX_DIR" configure.ac ; then
-	auxdir="$(grep AC_CONFIG_AUX_DIR configure.ac)"
+	auxdir="$(grep AC_CONFIG_AUX_DIR configure.ac | cut -f 2 -d '[' | cut -f 1 -d ']')"
 fi
 mkdir -p ${auxdir}
-#创建config，rpath文件
+# 创建config，rpath文件
 touch ${auxdir}/config.rpath
-#判断m4dir是否存在，不存在的话就创建一个出来
+# 判断m4dir是否存在，不存在的话就创建一个出来
 m4dir="$(grep AC_CONFIG_MACRO_DIR configure.ac | cut -f 2 -d '[' | cut -f 1 -d ']')"
-#test -n 字符串:字符串长度不伪则为真
+# test -n 字符串:字符串长度不伪则为真
 if test -n "$m4dir" ; then
 	mkdir -p ${m4dir}
 fi

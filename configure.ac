@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 #用这个文件和autoconf来创建一个configure脚本
 #初始化：名称和版本
-AC_INIT([gftp],[2.9.1b],[https://www.gftp.org/])
+AC_INIT([danissh],[0.0.7],[https://www.danielw7.com/])
 #文件夹
 AC_CONFIG_AUX_DIR([autoconf])
 #m4文件夹
