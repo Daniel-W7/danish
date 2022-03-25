@@ -193,12 +193,11 @@ AC_CONFIG_FILES(
 	docs/sample.gftp/Makefile
 	icons/Makefile
 	lib/Makefile
-	src/gftp
+  po/Makefile
 	src/Makefile
-	src/uicommon/Makefile
-	src/gtk/Makefile
-	src/text/Makefile
   src/danioc/Makefile
-	po/Makefile
+	src/gftp-gtk/Makefile
+	src/gftp-text/Makefile
+  src/uicommon/Makefile
 )
 AC_OUTPUT
