@@ -1,9 +1,10 @@
-# danish
-danish 是一个基于 gtk-3.0 的 ssh 连接管理工具，之后计划加上sftp的功能
+# danioc
 
-GITHUB地址：https://github.com/Daniel-W7/danish
+danioc(Daniel's Open Console)是一个基于 gtk-3.0 的开源免费的 ssh 连接管理工具，之后计划加上sftp的功能
 
-GITee地址：https://gitee.com/daniel-w7/danish
+GITHUB地址：https://github.com/Daniel-W7/danioc
+
+GITee地址：https://gitee.com/daniel-w7/danioc
 
 基于jnXssh进行开发，源程序适配的系统比较老了，进行了一些修改，源程序地址：https://github.com/chrisniu1984/jnXssh
 
@@ -42,20 +43,20 @@ GITee地址：https://gitee.com/daniel-w7/danish
 3、编译方法
 	(1)手动编译
 	
-	cd danish
+	cd danioc
 	
 	make && make install
 
 	(2)自动编译
 	
-	cd danish
+	cd danioc
 	
 	./automk.sh
 
 4、配置文件路径
 
-	~/.danish/site.xml
+	~/.danioc/site.xml
 
 5、启动方法
 	
-	danish
+	danioc

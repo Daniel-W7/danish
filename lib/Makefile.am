@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in 
 
-noinst_LIBRARIES = libdanissh.a
+noinst_LIBRARIES = libdanioc.a
 
 //源文件
 libgftp_a_SOURCES= \
@@ -34,7 +34,7 @@ AM_CPPFLAGS= \
 
 //头文件
 noinst_HEADERS= \
-	danissh.h \
+	danioc.h \
 	protocol_ftp.h \
 	protocol_http.h \
 	options.h \

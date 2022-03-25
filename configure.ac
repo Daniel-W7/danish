@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 #用这个文件和autoconf来创建一个configure脚本
 #初始化：名称和版本
-AC_INIT([danissh],[0.0.7],[https://www.danielw7.com/])
+AC_INIT([danioc],[0.0.7],[https://www.danielw7.com/])
 #文件夹
 AC_CONFIG_AUX_DIR([autoconf])
 #m4文件夹
@@ -198,7 +198,7 @@ AC_CONFIG_FILES(
 	src/uicommon/Makefile
 	src/gtk/Makefile
 	src/text/Makefile
-  src/danissh/Makefile
+  src/danioc/Makefile
 	po/Makefile
 )
 AC_OUTPUT

@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS=uicommon text gtk danissh
-bin_SCRIPTS=danissh
-EXTRA_DIST=danissh.in
+SUBDIRS=uicommon gftp-text gftp-gtk danioc
+bin_SCRIPTS=danioc
+EXTRA_DIST=danioc.in

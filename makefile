@@ -1,4 +1,4 @@
-TARGET = danish
+TARGET = danioc
 OBJS = main.o page.o ssh.o site.opp
 
 HEADER = config.h
@@ -16,11 +16,11 @@ $(TARGET): $(OBJS)
 	g++ -c $(CXXFLAGS) -o $@ $<
 
 install: ${TARGET}
-	sudo desktop-file-install danish.desktop
+	sudo desktop-file-install danioc.desktop
 	sudo cp ${TARGET} /usr/local/bin/
-	mkdir -p ${HOME}/.danish/
-	cp -r res ${HOME}/.danish/
-	if [ ! -f ${HOME}/.danish/site.xml ]; then cp site.xml.tmpl ${HOME}/.danish/site.xml; fi
+	mkdir -p ${HOME}/.danioc/
+	cp -r res ${HOME}/.danioc/
+	if [ ! -f ${HOME}/.danioc/site.xml ]; then cp site.xml.tmpl ${HOME}/.danioc/site.xml; fi
 	rm -rf $(TARGET) $(OBJS)
 	rm -rf cscope*
 clean:
