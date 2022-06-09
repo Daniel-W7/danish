@@ -3,7 +3,7 @@
 noinst_LIBRARIES = libdanioc.a
 
 //源文件
-libgftp_a_SOURCES= \
+libdanioc_a_SOURCES= \
 	cache.c \
 	charset-conv.c \
 	config_file.c \
@@ -29,7 +29,7 @@ libgftp_a_SOURCES= \
 AM_CPPFLAGS= \
 	$(GLIB_CFLAGS) \
 	$(PTHREAD_CFLAGS) \
-	-DSHARE_DIR=\"$(datadir)/gftp\" \
+	-DSHARE_DIR=\"$(datadir)/danioc\" \
 	-DLOCALE_DIR=\"$(datadir)/locale\"
 
 //头文件
