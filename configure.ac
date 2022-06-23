@@ -20,12 +20,12 @@ AC_PROG_RANLIB
 AC_ARG_ENABLE(gtk2, 
               [  --disable-gtk2          Do not look for GTK+ 2.0 libraries], 
               enable_gtk2=$enableval, 
-              enable_gtk2="yes")
+              enable_gtk2="no")
 
 AC_ARG_ENABLE(gtk3,
               [  --enable-gtk3           Enable GTK+ 3.0 (Experimental)],
               enable_gtk3=$enableval,
-              enable_gtk3="no")
+              enable_gtk3="yes")
 
 AC_ARG_ENABLE(gtkport, 
               [  --disable-gtkport       Disable compiling the GTK+ port], 
