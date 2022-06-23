@@ -58,6 +58,8 @@ AC_SUBST(PREFIX)
 
 AC_CANONICAL_HOST
 AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_LIBTOOL
 #配置头文件信息
 AC_CHECK_HEADERS(libutil.h malloc.h pty.h sys/ioctl.h sys/mkdev.h sys/sysmacros.h)
 AC_CHECK_FUNCS(gettimeofday select socket grantpt openpty getdtablesize)

@@ -38,7 +38,7 @@ GITee地址：https://gitee.com/daniel-w7/danioc
 
 	安装命令：
 
-		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils
+		sudo apt-get -y install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils autoconf automake gettext
 
 3、编译方法
 	(1)手动编译
