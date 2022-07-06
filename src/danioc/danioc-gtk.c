@@ -15,7 +15,7 @@
 
 #include "config.h"
 
-#include "page.h"
+#include "danioc-gtk.h"
 #include "site.h"
 
 //gtk初始化组件

@@ -1,7 +1,7 @@
-#ifndef __PAGE_H__
-#define __PAGE_H__
+#ifndef __DANIOCGTK_H__
+#define __DANIOCGTK_H__
 
-#include "ssh.h"
+#include "../../lib/ssh.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,4 +20,4 @@ int window_create(GtkWidget *sitetree);
 };
 #endif
 
-#endif // __PAGE_H__
+#endif // __DANIOCGTK_H__

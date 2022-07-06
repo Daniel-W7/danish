@@ -33,8 +33,8 @@ AM_CPPFLAGS= \
 	-DLOCALE_DIR=\"$(datadir)/locale\"
 
 //头文件
-noinst_HEADERS= \
-	danioc.h \
+noinst_HEADERS=\
+	../src/danioc/danioc.h \
 	protocol_ftp.h \
 	protocol_http.h \
 	options.h \

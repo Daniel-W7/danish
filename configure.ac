@@ -189,17 +189,11 @@ if test x"$gtk_warnings" = x"yes"; then
    CPPFLAGS="$CPPFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
 fi
 #读取makefile
+#lib/Makefile
 AC_CONFIG_FILES(
 	Makefile
-	docs/Makefile
-	docs/sample.gftp/Makefile
 	icons/Makefile
-	lib/Makefile
-  	po/Makefile
 	src/Makefile
   	src/danioc/Makefile
-	src/gftp-gtk/Makefile
-	src/gftp-text/Makefile
-  	src/uicommon/Makefile
 )
 AC_OUTPUT
