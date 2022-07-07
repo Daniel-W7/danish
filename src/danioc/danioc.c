@@ -12,11 +12,12 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <gtk/gtk.h>
+#include <vte/vte.h>
 
-#include "config.h"
-#include "page.h"
-#include "ssh.h"
-#include "site.h"
+#include "danioc.h"
+#include "danioc-gtk.h"
+
 
 const char *HOME = NULL;
 char PATH[256] = {0x00};

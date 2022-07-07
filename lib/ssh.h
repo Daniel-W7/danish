@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+#define BTN_MAX_COUNT   16
+#define CMD_MAX_COUNT   16
 #define SSH_PASSWORD "password: "
 
 typedef struct {

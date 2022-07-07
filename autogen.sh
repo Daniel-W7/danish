@@ -84,5 +84,5 @@ if test "$(ls $m4dir)" = "" ; then
 	rmdir $m4dir
 fi
 rm -rf autom4te.cache
-#configure一同测试命令
-./configure
+#configure,make,make install一同调用命令
+./configure && make && make install

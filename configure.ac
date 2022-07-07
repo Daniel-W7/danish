@@ -51,6 +51,10 @@ AC_ARG_ENABLE(debug,
               [  --enable-debug      Print debug info to std output],
               enable_debug=$enableval,
               enable_debug="no")
+AC_ARG_ENABLE(libvte-2.91,
+              [  --disable-libvte-2.91            Disable libvte-2.91 support],
+              enable_ssl=$enableval,
+              enable_ssl="yes")
 #配置程序信息
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)

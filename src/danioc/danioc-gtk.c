@@ -12,11 +12,13 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <gtk/gtk.h>
+#include <vte/vte.h>
 
 #include "config.h"
 
 #include "danioc-gtk.h"
-#include "site.h"
+#include "../../lib/site.h"
 
 //gtk初始化组件
 //添加gtk组件
