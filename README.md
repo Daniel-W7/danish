@@ -9,7 +9,7 @@ GITee地址：https://gitee.com/daniel-w7/danish
 
 1、运行所需
 
-	对于Debian 11 需要安装以下额外包:
+	对于Debian 需要安装以下额外包:
 
 	libtinyxml2.6.2v5
 
@@ -19,41 +19,16 @@ GITee地址：https://gitee.com/daniel-w7/danish
 
 2、编译安装所需
 
-	对于Debian 11 需要安装以下额外包:
+	对于Debian 需要安装以下额外包:
 
-	gcc
-
-	make
-
-	g++
-	
-	libtinyxml-dev
-	
-	libgtk-3-dev
-
-	libvte-2.91-dev
-
-	desktop-file-utils
+	gcc,make,g++,libtinyxml-dev,libgtk-3-dev,libvte-2.91-dev,desktop-file-utils
 
 	安装命令：
 
 		sudo apt-get install libtinyxml-dev libgtk-3-dev libvte-2.91-dev gcc make g++ desktop-file-utils
 
-3、make编译方法
-
-	(1)手动编译
+3、编译方法
 	
-	cd danish
-	
-	make && make install
-
-	(2)自动编译
-	
-	cd danish
-	
-	./automk.sh
-
-4、cmake编译方法
 	cd danish/build
 	cmake ../
 	make
